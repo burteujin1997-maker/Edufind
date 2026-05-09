@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Mail } from "lucide-react";
 
 const plans = [
   {
@@ -73,10 +73,34 @@ const plans = [
 ];
 
 const extras = [
-  { name: "Онцлох зар 7 хоног", price: 150000 },
-  { name: "Push мэдэгдэл 1 удаа", price: 99000 },
-  { name: "Нэмэлт видео", price: 50000 },
-  { name: "Сарын аналитик тайлан", price: 30000 },
+  {
+    name: "Онцлох зар 7 хоног",
+    price: 150000,
+    icon: "⭐",
+    description: "Хайлтын үр дүнд дээр харагдана",
+    subject: "Онцлох зар захиалга",
+  },
+  {
+    name: "Push мэдэгдэл 1 удаа",
+    price: 99000,
+    icon: "🔔",
+    description: "Бүх хэрэглэгчдэд нэг удаа мэдэгдэл илгээнэ",
+    subject: "Push мэдэгдэл захиалга",
+  },
+  {
+    name: "Нэмэлт видео",
+    price: 50000,
+    icon: "🎬",
+    description: "Профайлд нэмэлт видео нэмэх",
+    subject: "Нэмэлт видео захиалга",
+  },
+  {
+    name: "Сарын аналитик тайлан",
+    price: 30000,
+    icon: "📊",
+    description: "Дэлгэрэнгүй үзэлт, статистик тайлан",
+    subject: "Аналитик тайлан захиалга",
+  },
 ];
 
 function formatPrice(price: number) {
@@ -97,8 +121,8 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Plans */}
       <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div
@@ -169,20 +193,42 @@ export default function PricingPage() {
 
         {/* Extra services */}
         <div className="mt-12">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Нэмэлт үйлчилгээ</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Нэмэлт үйлчилгээ</h2>
+          <p className="text-center text-gray-500 text-sm mb-6">
+            Захиалахын тулд товч дарахад имэйл нээгдэнэ. Бид 1 ажлын өдрийн дотор холбогдоно.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {extras.map((e) => (
-              <div key={e.name} className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
-                <p className="text-sm text-gray-600">{e.name}</p>
-                <p className="text-xl font-bold text-[#1a3a5c] mt-2">{formatPrice(e.price)}</p>
+              <div key={e.name} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col">
+                <div className="text-3xl mb-2">{e.icon}</div>
+                <p className="font-semibold text-gray-900 text-sm">{e.name}</p>
+                <p className="text-xs text-gray-500 mt-1 flex-1">{e.description}</p>
+                <p className="text-xl font-bold text-[#1a3a5c] mt-3">{formatPrice(e.price)}</p>
+                <a
+                  href={`mailto:edufind2026@gmail.com?subject=${encodeURIComponent(e.subject)}&body=${encodeURIComponent(`Сайн байна уу,\n\n${e.name} үйлчилгээг захиалахыг хүсч байна.\n\nБайгууллагын нэр: \nУтас: \nИмэйл: \n\nБаярлалаа.`)}`}
+                  className="mt-3 block text-center bg-[#1a3a5c] hover:bg-[#16324f] text-white text-sm font-medium py-2 rounded-xl transition-colors"
+                >
+                  Захиалах
+                </a>
               </div>
             ))}
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="mt-12 text-center text-gray-500 text-sm">
-          <p>Асуух зүйл байвал: <a href="mailto:edufind2026@gmail.com" className="text-blue-600 hover:underline">edufind2026@gmail.com</a></p>
+        {/* Холбоо барих */}
+        <div className="mt-12 bg-white rounded-2xl border border-gray-200 p-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Mail className="h-5 w-5 text-[#1a3a5c]" />
+            <h3 className="font-bold text-gray-900">Асуух зүйл байна уу?</h3>
+          </div>
+          <p className="text-gray-500 text-sm mb-4">Бидэнтэй холбогдоорой. Ажлын өдрүүдэд хариулна.</p>
+          <a
+            href="mailto:edufind2026@gmail.com"
+            className="inline-flex items-center gap-2 bg-[#1ea572] hover:bg-[#25c588] text-white font-medium px-6 py-2.5 rounded-xl transition-colors"
+          >
+            <Mail className="h-4 w-4" />
+            edufind2026@gmail.com
+          </a>
         </div>
       </div>
     </div>
