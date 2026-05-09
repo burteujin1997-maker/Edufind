@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye } from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell } from 'lucide-react'
 import Link from 'next/link'
 
 type School = {
@@ -30,6 +30,13 @@ type School = {
   contact_person: string | null
 }
 
+type Announcement = {
+  id: string
+  title: string
+  content: string
+  created_at: string
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   ebs: 'ЕБС',
   ids: 'Олон улсын сургууль',
@@ -47,6 +54,7 @@ export default function SchoolProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [viewCount, setViewCount] = useState<number>(0)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
 
   useEffect(() => {
     if (!slug) return
@@ -67,17 +75,23 @@ export default function SchoolProfilePage() {
       setLoading(false)
 
       // Үзэлт бүртгэх
-      await supabase.from('school_views').insert({
-        school_id: data.id,
-      })
+      await supabase.from('school_views').insert({ school_id: data.id })
 
       // Нийт үзэлт тоолох
       const { count } = await supabase
         .from('school_views')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', data.id)
-
       if (count !== null) setViewCount(count)
+
+      // Мэдэгдлүүд авах
+      const { data: annData } = await supabase
+        .from('announcements')
+        .select('id, title, content, created_at')
+        .eq('school_id', data.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+      if (annData) setAnnouncements(annData)
     }
     fetchSchool()
   }, [slug])
@@ -114,7 +128,6 @@ export default function SchoolProfilePage() {
           </Link>
 
           <div className="flex items-start gap-4">
-            {/* Logo */}
             <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-bold shrink-0">
               {school.logo_url ? (
                 <img src={school.logo_url} alt={school.name} className="w-full h-full object-cover rounded-xl" />
@@ -162,6 +175,29 @@ export default function SchoolProfilePage() {
 
         {/* Main content */}
         <div className="md:col-span-2 space-y-6">
+
+          {/* Мэдэгдлүүд */}
+          {announcements.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Bell className="h-5 w-5 text-[#1ea572]" />
+                <h2 className="text-lg font-bold text-gray-900">Мэдэгдлүүд</h2>
+              </div>
+              <div className="space-y-4">
+                {announcements.map((ann) => (
+                  <div key={ann.id} className="border-l-4 border-[#1ea572] pl-4 py-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 text-sm">{ann.title}</h3>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {new Date(ann.created_at).toLocaleDateString('mn-MN')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">{ann.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {school.description && (
@@ -240,7 +276,6 @@ export default function SchoolProfilePage() {
           {/* Contact */}
           <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
             <h3 className="text-sm font-medium text-gray-500">Холбоо барих</h3>
-
             {school.address && (
               <div className="flex items-start gap-2 text-sm text-gray-700">
                 <MapPin className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
