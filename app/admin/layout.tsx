@@ -1,13 +1,18 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import AdminSidebar from "./AdminSidebar";
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import AdminSidebar from "./AdminSidebar"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = cookies();
-  const isLoggedIn = cookieStore.get("admin_session")?.value === "true";
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const cookieStore = cookies()
+  const isLoggedIn = cookieStore.get("admin_session")?.value === "true"
+  const isLoginPage = false
 
-  if (!isLoggedIn) {
-    redirect("/admin/login");
+  if (!isLoggedIn && !isLoginPage) {
+    redirect("/admin/login")
   }
 
   return (
@@ -15,5 +20,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminSidebar />
       <main className="flex-1 p-6">{children}</main>
     </div>
-  );
+  )
 }
