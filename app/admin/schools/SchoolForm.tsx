@@ -20,6 +20,13 @@ interface Props {
   school?: School;
 }
 
+// Тарифын зураг хязгаар
+const IMAGE_LIMITS: Record<string, number> = {
+  basic: 5,
+  standard: Infinity,
+  premium: Infinity,
+}
+
 export default function SchoolForm({ school }: Props) {
   const router = useRouter();
   const isEdit = !!school;
@@ -29,6 +36,8 @@ export default function SchoolForm({ school }: Props) {
   const [uploadProgress, setUploadProgress] = useState("");
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoProgress, setVideoProgress] = useState("");
+  const [imagesUploading, setImagesUploading] = useState(false);
+  const [imagesProgress, setImagesProgress] = useState("");
 
   const [form, setForm] = useState({
     name: school?.name ?? "",
@@ -47,6 +56,7 @@ export default function SchoolForm({ school }: Props) {
     tuition_max: school?.tuition_max?.toString() ?? "",
     logo_url: school?.logo_url ?? "",
     video_url: (school as any)?.video_url ?? "",
+    images: (school as any)?.images ?? [] as string[],
     tier: (school as any)?.tier ?? "basic",
     is_featured: school?.is_featured ?? false,
     is_verified: school?.is_verified ?? false,
@@ -56,7 +66,7 @@ export default function SchoolForm({ school }: Props) {
     setForm((f) => ({ ...f, name, slug: isEdit ? f.slug : slugify(name) }));
   }
 
-  // Лого зураг upload хийх
+  // Лого зураг upload
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -91,25 +101,85 @@ export default function SchoolForm({ school }: Props) {
     setTimeout(() => setUploadProgress(""), 3000);
   }
 
-  // Видео upload хийх
+  // Олон зураг upload
+  async function handleImagesUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const limit = IMAGE_LIMITS[form.tier] ?? 5;
+    const currentCount = form.images.length;
+    const remaining = limit === Infinity ? files.length : limit - currentCount;
+
+    if (remaining <= 0) {
+      alert(`${form.tier === 'basic' ? 'Basic' : 'Standard'} тариф дээр ${limit} зургийн хязгаарт хүрсэн байна!`)
+      return;
+    }
+
+    const filesToUpload = files.slice(0, remaining);
+
+    if (files.length > remaining) {
+      alert(`Зөвхөн ${remaining} зураг нэмэх боломжтой. ${files.length - remaining} зураг орхигдлоо.`)
+    }
+
+    setImagesUploading(true);
+    setImagesProgress(`0/${filesToUpload.length} зураг upload хийж байна...`);
+
+    const uploadedUrls: string[] = [];
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`"${file.name}" зургийн хэмжээ 5MB-аас их байна. Орхигдлоо.`);
+        continue;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `image-${Date.now()}-${i}.${fileExt}`;
+      const filePath = `gallery/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("school-images")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        alert(`"${file.name}" upload алдаа: ${uploadError.message}`);
+        continue;
+      }
+
+      const { data } = supabase.storage.from("school-images").getPublicUrl(filePath);
+      uploadedUrls.push(data.publicUrl);
+      setImagesProgress(`${i + 1}/${filesToUpload.length} зураг upload хийж байна...`);
+    }
+
+    setForm((f) => ({ ...f, images: [...f.images, ...uploadedUrls] }));
+    setImagesUploading(false);
+    setImagesProgress(`✅ ${uploadedUrls.length} зураг амжилттай upload хийлээ!`);
+    setTimeout(() => setImagesProgress(""), 3000);
+  }
+
+  // Зураг устгах
+  function removeImage(index: number) {
+    setForm((f) => ({ ...f, images: f.images.filter((_: string, i: number) => i !== index) }));
+  }
+
+  // Видео upload
   async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Видео хэмжээ шалгах (50MB хүртэл)
     if (file.size > 50 * 1024 * 1024) {
       alert("Видеоны хэмжээ 50MB-аас бага байх ёстой!");
       return;
     }
 
-    // Тарифын хязгаарлалт
     if (form.tier === 'basic') {
       alert("Видео upload хийхэд Standard эсвэл Premium тариф шаардагдана!");
       return;
     }
 
     setVideoUploading(true);
-    setVideoProgress("Видео upload хийж байна... (удаан үргэлжилж болно)");
+    setVideoProgress("Видео upload хийж байна...");
 
     const fileExt = file.name.split(".").pop();
     const fileName = `video-${Date.now()}.${fileExt}`;
@@ -153,6 +223,7 @@ export default function SchoolForm({ school }: Props) {
       description: form.description || null,
       logo_url: form.logo_url || null,
       video_url: form.video_url || null,
+      images: form.images.length > 0 ? form.images : null,
     };
 
     const url = isEdit ? `/api/admin/schools/${school!.id}` : "/api/admin/schools";
@@ -174,6 +245,8 @@ export default function SchoolForm({ school }: Props) {
   }
 
   const canUploadVideo = form.tier === 'standard' || form.tier === 'premium';
+  const imageLimit = IMAGE_LIMITS[form.tier] ?? 5;
+  const remainingImages = imageLimit === Infinity ? '∞' : imageLimit - form.images.length;
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
@@ -192,15 +265,15 @@ export default function SchoolForm({ school }: Props) {
         </div>
       </div>
 
-      {/* Тариф сонгох */}
+      {/* Тариф */}
       <div className="space-y-1">
         <Label>Тариф</Label>
         <Select value={form.tier} onValueChange={(v) => setForm((f) => ({ ...f, tier: v }))}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="basic">Basic — ₮99,000/сар</SelectItem>
-            <SelectItem value="standard">Standard — ₮199,000/сар</SelectItem>
-            <SelectItem value="premium">Premium — ₮399,000/сар</SelectItem>
+            <SelectItem value="basic">Basic — ₮99,000/сар (5 зураг)</SelectItem>
+            <SelectItem value="standard">Standard — ₮199,000/сар (хязгааргүй зураг)</SelectItem>
+            <SelectItem value="premium">Premium — ₮399,000/сар (хязгааргүй зураг)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -297,7 +370,7 @@ export default function SchoolForm({ school }: Props) {
         <div className="flex items-center gap-3">
           <label className="cursor-pointer">
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${uploading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-              {uploading ? "⏳ Upload хийж байна..." : "📁 Зураг сонгох"}
+              {uploading ? "⏳ Upload хийж байна..." : "📁 Лого сонгох"}
             </div>
             <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploading} className="hidden" />
           </label>
@@ -310,7 +383,67 @@ export default function SchoolForm({ school }: Props) {
         </div>
       </div>
 
-      {/* Видео upload — Standard, Premium */}
+      {/* Олон зураг upload */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>Зурагнууд</Label>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            form.images.length >= imageLimit && imageLimit !== Infinity
+              ? 'bg-red-100 text-red-600'
+              : 'bg-gray-100 text-gray-600'
+          }`}>
+            {form.images.length}/{imageLimit === Infinity ? '∞' : imageLimit} зураг
+          </span>
+        </div>
+
+        {/* Одоогийн зурагнууд */}
+        {form.images.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {form.images.map((img: string, i: number) => (
+              <div key={i} className="relative group">
+                <img src={img} alt={`Зураг ${i + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload товч */}
+        {(imageLimit === Infinity || form.images.length < imageLimit) && (
+          <div className="flex items-center gap-3">
+            <label className="cursor-pointer">
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                imagesUploading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}>
+                {imagesUploading ? "⏳ Upload хийж байна..." : "🖼️ Зураг нэмэх"}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImagesUpload}
+                disabled={imagesUploading}
+                className="hidden"
+              />
+            </label>
+            {imagesProgress && <span className="text-sm text-green-600">{imagesProgress}</span>}
+          </div>
+        )}
+
+        {imageLimit !== Infinity && form.images.length >= imageLimit && (
+          <p className="text-sm text-red-500">⚠️ Basic тарифын {imageLimit} зургийн хязгаарт хүрсэн. Standard тариф авбал хязгааргүй зураг нэмэх боломжтой.</p>
+        )}
+
+        <p className="text-xs text-gray-400">JPG, PNG, WebP • Нэг зургийн дээд хэмжээ: 5MB • Олон зураг нэгэн зэрэг сонгох боломжтой</p>
+      </div>
+
+      {/* Видео upload */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Label>Видео</Label>
@@ -329,19 +462,11 @@ export default function SchoolForm({ school }: Props) {
         <div className="flex items-center gap-3">
           <label className={canUploadVideo ? "cursor-pointer" : "cursor-not-allowed opacity-50"}>
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-              videoUploading || !canUploadVideo
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              videoUploading || !canUploadVideo ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             }`}>
               {videoUploading ? "⏳ Видео upload хийж байна..." : "🎬 Видео сонгох"}
             </div>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleVideoUpload}
-              disabled={videoUploading || !canUploadVideo}
-              className="hidden"
-            />
+            <input type="file" accept="video/*" onChange={handleVideoUpload} disabled={videoUploading || !canUploadVideo} className="hidden" />
           </label>
           {videoProgress && <span className="text-sm text-green-600">{videoProgress}</span>}
         </div>
@@ -360,7 +485,7 @@ export default function SchoolForm({ school }: Props) {
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading || uploading || videoUploading}>
+        <Button type="submit" disabled={loading || uploading || videoUploading || imagesUploading}>
           {loading ? "Хадгалж байна..." : isEdit ? "Хадгалах" : "Нэмэх"}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.push("/admin/schools")}>
