@@ -5,7 +5,8 @@ export default function Footer() {
   return (
     <footer className="border-t bg-[#1a3a5c] text-white">
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          {/* Лого */}
           <div>
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
@@ -19,6 +20,7 @@ export default function Footer() {
             </p>
           </div>
 
+          {/* Ангилал */}
           <div>
             <h3 className="mb-3 font-semibold">Ангилал</h3>
             <ul className="space-y-2 text-sm text-blue-200">
@@ -28,25 +30,48 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Байгууллагуудад */}
+          <div>
+            <h3 className="mb-3 font-semibold">Байгууллагуудад</h3>
+            <ul className="space-y-2 text-sm text-blue-200">
+              <li><Link href="/register" className="hover:text-white transition-colors">Бүртгүүлэх</Link></li>
+              <li><Link href="/pricing" className="hover:text-white transition-colors">Үнэ тариф</Link></li>
+              <li><Link href="/register?tier=basic" className="hover:text-white transition-colors">Basic тариф</Link></li>
+              <li><Link href="/register?tier=standard" className="hover:text-white transition-colors">Standard тариф</Link></li>
+              <li><Link href="/register?tier=premium" className="hover:text-white transition-colors">Premium тариф</Link></li>
+            </ul>
+          </div>
+
+          {/* Холбоо барих */}
           <div>
             <h3 className="mb-3 font-semibold">Холбоо барих</h3>
             <ul className="space-y-2 text-sm text-blue-200">
               <li>
-                <a href="mailto:info@edufind.mn" className="hover:text-white transition-colors">
-                  info@edufind.mn
+                <a href="mailto:edufind2026@gmail.com" className="hover:text-white transition-colors">
+                  edufind2026@gmail.com
+                </a>
+              </li>
+              <li>
+                <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  Facebook
                 </a>
               </li>
               <li>
                 <Link href="/search" className="hover:text-white transition-colors">
-                  Байгууллага нэмүүлэх
+                  Сургуулиа хайх
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-blue-800 pt-8 text-center text-sm text-blue-300">
-          <p>© 2025 EduFind.mn — Бүх эрх хуулиар хамгаалагдсан</p>
+        <div className="mt-8 border-t border-blue-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-blue-300">
+          <p>© 2026 EduFind.mn — Бүх эрх хуулиар хамгаалагдсан</p>
+          <div className="flex gap-4">
+            <Link href="/pricing" className="hover:text-white transition-colors">Үнэ тариф</Link>
+            <Link href="/register" className="hover:text-white transition-colors">Бүртгүүлэх</Link>
+            <Link href="/search" className="hover:text-white transition-colors">Хайлт</Link>
+          </div>
         </div>
       </div>
     </footer>
