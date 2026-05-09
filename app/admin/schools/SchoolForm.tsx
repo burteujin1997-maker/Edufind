@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { CATEGORIES, DISTRICTS, type School, type Category } from "@/lib/types";
 import { slugify } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   school?: School;
@@ -24,6 +25,8 @@ export default function SchoolForm({ school }: Props) {
   const isEdit = !!school;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
 
   const [form, setForm] = useState({
     name: school?.name ?? "",
@@ -47,6 +50,46 @@ export default function SchoolForm({ school }: Props) {
 
   function handleNameChange(name: string) {
     setForm((f) => ({ ...f, name, slug: isEdit ? f.slug : slugify(name) }));
+  }
+
+  // Лого зураг upload хийх
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Файлын хэмжээ шалгах (2MB хүртэл)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Зургийн хэмжээ 2MB-аас бага байх ёстой!");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress("Зураг upload хийж байна...");
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `logo-${Date.now()}.${fileExt}`;
+    const filePath = `logos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("school-images")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      alert("Upload алдаа: " + uploadError.message);
+      setUploading(false);
+      setUploadProgress("");
+      return;
+    }
+
+    // Public URL авах
+    const { data } = supabase.storage
+      .from("school-images")
+      .getPublicUrl(filePath);
+
+    setForm((f) => ({ ...f, logo_url: data.publicUrl }));
+    setUploading(false);
+    setUploadProgress("✅ Амжилттай upload хийлээ!");
+    setTimeout(() => setUploadProgress(""), 3000);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -225,9 +268,63 @@ export default function SchoolForm({ school }: Props) {
         </div>
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="logo_url">Лого URL</Label>
-        <Input id="logo_url" value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} />
+      {/* Лого upload хэсэг */}
+      <div className="space-y-3">
+        <Label>Лого зураг</Label>
+
+        {/* Одоогийн лого харуулах */}
+        {form.logo_url && (
+          <div className="flex items-center gap-3">
+            <img
+              src={form.logo_url}
+              alt="Лого"
+              className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+            />
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, logo_url: "" }))}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              Устгах
+            </button>
+          </div>
+        )}
+
+        {/* Upload товч */}
+        <div className="flex items-center gap-3">
+          <label className="cursor-pointer">
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              uploading
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}>
+              {uploading ? "⏳ Upload хийж байна..." : "📁 Зураг сонгох"}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+          {uploadProgress && (
+            <span className="text-sm text-green-600">{uploadProgress}</span>
+          )}
+        </div>
+
+        <p className="text-xs text-gray-400">JPG, PNG, WebP • Дээд хэмжээ: 2MB</p>
+
+        {/* Эсвэл URL-р оруулах */}
+        <div className="space-y-1">
+          <Label htmlFor="logo_url" className="text-xs text-gray-500">Эсвэл URL-р оруулах</Label>
+          <Input
+            id="logo_url"
+            value={form.logo_url}
+            onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
+            placeholder="https://..."
+          />
+        </div>
       </div>
 
       <div className="flex gap-6">
@@ -248,7 +345,7 @@ export default function SchoolForm({ school }: Props) {
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || uploading}>
           {loading ? "Хадгалж байна..." : isEdit ? "Хадгалах" : "Нэмэх"}
         </Button>
         <Button
