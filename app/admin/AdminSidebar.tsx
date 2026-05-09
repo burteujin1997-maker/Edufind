@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/admin", label: "Хяналтын самбар", icon: LayoutDashboard },
   { href: "/admin/schools", label: "Байгууллагууд", icon: Building2 },
-  { href: "/admin/schools/new", label: "Шинэ нэмэх", icon: PlusCircle },
+ { href: "/admin/requests", label: "Бүртгэлийн хүсэлт", icon: PlusCircle },
 ];
 
 export default function AdminSidebar() {

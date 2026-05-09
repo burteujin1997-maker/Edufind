@@ -153,7 +153,7 @@ export default function HomePage() {
               Таны сургалтын байгууллагыг EduFind.mn-д бүртгүүлж, олон мянган хайгчид хүрч очоорой.
             </p>
             <Link
-              href="mailto:info@edufind.mn"
+              href="/register"
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#1ea572] px-6 py-3 font-medium text-white hover:bg-[#25c588] transition-colors"
             >
               <Search className="h-4 w-4" />

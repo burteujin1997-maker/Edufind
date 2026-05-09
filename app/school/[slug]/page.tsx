@@ -1,139 +1,162 @@
-import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import Link from "next/link";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Facebook,
-  ArrowLeft,
-  BadgeCheck,
-  BookOpen,
-  DollarSign,
-  Share2,
-} from "lucide-react";
-import { getSchoolBySlug } from "@/lib/schools";
-import { CATEGORIES } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { formatPriceRange } from "@/lib/utils";
-import ContactModal from "./ContactModal";
+'use client'
 
-interface Props {
-  params: { slug: string };
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+
+type School = {
+  id: string
+  name: string
+  slug: string
+  category: string
+  district: string
+  address: string
+  phone: string
+  email: string
+  website: string | null
+  facebook: string | null
+  description: string | null
+  features: string[] | null
+  tuition_min: number | null
+  tuition_max: number | null
+  logo_url: string | null
+  images: string[] | null
+  is_featured: boolean
+  is_verified: boolean
+  tier: string
+  video_url: string | null
+  contact_person: string | null
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const school = await getSchoolBySlug(params.slug);
-  if (!school) return { title: "Олдсонгүй" };
-  return {
-    title: `${school.name} — EduFind.mn`,
-    description: school.description ?? `${school.name} сургуулийн мэдээлэл`,
-  };
+const CATEGORY_LABELS: Record<string, string> = {
+  ebs: 'ЕБС',
+  ids: 'Олон улсын сургууль',
+  surgalt: 'Сургалтын төв',
 }
 
-const CATEGORY_COLOR: Record<string, string> = {
-  ebs: "blue",
-  ids: "green",
-  surgalt: "amber",
-};
+function formatPrice(price: number) {
+  return (price / 1000000).toFixed(1) + ' сая ₮'
+}
 
-export default async function SchoolDetailPage({ params }: Props) {
-  const school = await getSchoolBySlug(params.slug);
-  if (!school) notFound();
+export default function SchoolProfilePage() {
+  const params = useParams()
+  const slug = params?.slug as string
+  const [school, setSchool] = useState<School | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  const websiteHref = school.website
-    ? school.website.startsWith("http")
-      ? school.website
-      : `https://${school.website}`
-    : null;
+  useEffect(() => {
+    if (!slug) return
+    const fetchSchool = async () => {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('slug', slug)
+        .single()
 
-  const facebookHref = school.facebook
-    ? school.facebook.startsWith("http")
-      ? school.facebook
-      : `https://${school.facebook}`
-    : null;
+      if (error || !data) {
+        setNotFound(true)
+      } else {
+        setSchool(data)
+      }
+      setLoading(false)
+    }
+    fetchSchool()
+  }, [slug])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a3a5c]" />
+      </div>
+    )
+  }
+
+  if (notFound || !school) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
+        <div className="text-5xl mb-4">🏫</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Байгууллага олдсонгүй</h1>
+        <p className="text-gray-500 mb-6">Хайсан байгууллага байхгүй байна.</p>
+        <Link href="/search" className="bg-[#1a3a5c] text-white px-6 py-2.5 rounded-xl hover:bg-[#16324f]">
+          Хайлт руу буцах
+        </Link>
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
-      {/* Back */}
-      <Link
-        href="/search"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#1a3a5c] transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Хайлт руу буцах
-      </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-[#1a3a5c] text-white py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <Link href="/search" className="inline-flex items-center gap-2 text-blue-200 hover:text-white text-sm mb-4 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Хайлт руу буцах
+          </Link>
 
-      {/* Header card */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-        {/* Top banner */}
-        <div className="h-24 bg-gradient-to-r from-[#1a3a5c] to-[#2a5a8c]" />
-
-        <div className="px-6 pb-6">
-          <div className="-mt-10 mb-4 flex items-end justify-between">
-            <div className="flex h-20 w-20 items-center justify-center rounded-xl border-4 border-white bg-white shadow-md text-3xl font-bold text-[#1a3a5c]">
-              {school.name.charAt(0)}
-            </div>
-            <div className="flex gap-2 mt-4">
-              {school.is_featured && <Badge variant="green">Онцлох</Badge>}
-              {school.is_verified && (
-                <Badge variant="default" className="flex items-center gap-1">
-                  <BadgeCheck className="h-3 w-3" /> Баталгаажсан
-                </Badge>
+          <div className="flex items-start gap-4">
+            {/* Logo */}
+            <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center text-2xl font-bold shrink-0">
+              {school.logo_url ? (
+                <img src={school.logo_url} alt={school.name} className="w-full h-full object-cover rounded-xl" />
+              ) : (
+                school.name.charAt(0)
               )}
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-[#1a3a5c] md:text-3xl">{school.name}</h1>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant={CATEGORY_COLOR[school.category] as "blue" | "green" | "amber"}>
-                  {CATEGORIES[school.category]}
-                </Badge>
-                {school.subcategory && (
-                  <Badge variant="outline">{school.subcategory}</Badge>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-bold">{school.name}</h1>
+                {school.is_verified && (
+                  <span className="inline-flex items-center gap-1 bg-blue-500 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Баталгаажсан
+                  </span>
                 )}
-                {school.district && (
-                  <Badge variant="outline">
-                    <MapPin className="mr-1 h-3 w-3" />
-                    {school.district}
-                  </Badge>
+                {school.is_featured && (
+                  <span className="inline-flex items-center gap-1 bg-yellow-400 text-yellow-900 text-xs font-medium px-2.5 py-1 rounded-full">
+                    ★ Онцлох
+                  </span>
                 )}
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <ContactModal schoolName={school.name} phone={school.phone} email={school.email} />
+              <div className="flex items-center gap-3 mt-2 flex-wrap text-blue-200 text-sm">
+                <span>{CATEGORY_LABELS[school.category] || school.category}</span>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {school.district}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+
         {/* Main content */}
         <div className="md:col-span-2 space-y-6">
+
           {/* Description */}
           {school.description && (
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h2 className="mb-3 flex items-center gap-2 font-semibold text-[#1a3a5c]">
-                <BookOpen className="h-4 w-4" /> Сургуулийн тухай
-              </h2>
-              <p className="text-sm leading-relaxed text-gray-700">{school.description}</p>
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">Танилцуулга</h2>
+              <p className="text-gray-600 leading-relaxed">{school.description}</p>
             </div>
           )}
 
           {/* Features */}
           {school.features && school.features.length > 0 && (
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h2 className="mb-3 font-semibold text-[#1a3a5c]">Сургалтын онцлог</h2>
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">Онцлог</h2>
               <div className="flex flex-wrap gap-2">
                 {school.features.map((f) => (
-                  <span
-                    key={f}
-                    className="rounded-full border border-[#1a3a5c]/20 bg-[#1a3a5c]/5 px-3 py-1 text-sm text-[#1a3a5c]"
-                  >
+                  <span key={f} className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-full border border-blue-100">
                     {f}
                   </span>
                 ))}
@@ -141,130 +164,96 @@ export default async function SchoolDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Tuition */}
-          {(school.tuition_min || school.tuition_max) && (
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h2 className="mb-3 flex items-center gap-2 font-semibold text-[#1a3a5c]">
-                <DollarSign className="h-4 w-4" /> Жилийн төлбөр
-              </h2>
-              <p className="text-2xl font-bold text-[#1ea572]">
-                {formatPriceRange(school.tuition_min, school.tuition_max)}
-              </p>
-              <p className="mt-1 text-xs text-gray-400">* Дээрх үнэ жилийн сургалтын төлбөр</p>
+          {/* Images */}
+          {school.images && school.images.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">Зурагнууд</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {school.images.map((img, i) => (
+                  <img key={i} src={img} alt={`${school.name} ${i + 1}`} className="rounded-xl object-cover w-full h-40" />
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Map */}
-          {school.address && (
-            <div className="rounded-xl border bg-white p-6 shadow-sm">
-              <h2 className="mb-3 flex items-center gap-2 font-semibold text-[#1a3a5c]">
-                <MapPin className="h-4 w-4" /> Байршил
-              </h2>
-              <p className="mb-3 text-sm text-gray-700">{school.address}</p>
-              <div className="overflow-hidden rounded-lg border h-48 bg-gray-100">
-                <iframe
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(school.address)}&output=embed`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
+          {/* Video */}
+          {school.video_url && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900 mb-3">Видео</h2>
+              <video src={school.video_url} controls className="w-full rounded-xl" />
             </div>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Contact info */}
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
-            <h2 className="mb-4 font-semibold text-[#1a3a5c]">Холбоо барих</h2>
-            <div className="space-y-3">
-              {school.phone && (
-                <a
-                  href={`tel:${school.phone}`}
-                  className="flex items-center gap-3 text-sm text-gray-700 hover:text-[#1a3a5c] transition-colors"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Phone className="h-4 w-4" />
-                  </div>
-                  <span>{school.phone}</span>
-                </a>
-              )}
-              {school.email && (
-                <a
-                  href={`mailto:${school.email}`}
-                  className="flex items-center gap-3 text-sm text-gray-700 hover:text-[#1a3a5c] transition-colors"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50 text-green-600">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <span className="break-all">{school.email}</span>
-                </a>
-              )}
-              {websiteHref && (
-                <a
-                  href={websiteHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-gray-700 hover:text-[#1a3a5c] transition-colors"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
-                    <Globe className="h-4 w-4" />
-                  </div>
-                  <span className="break-all">{school.website}</span>
-                </a>
-              )}
-              {facebookHref && (
-                <a
-                  href={facebookHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-gray-700 hover:text-[#1a3a5c] transition-colors"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                    <Facebook className="h-4 w-4" />
-                  </div>
-                  <span>Facebook хуудас</span>
-                </a>
-              )}
+
+          {/* Tuition */}
+          {(school.tuition_min || school.tuition_max) && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Сургалтын төлбөр</h3>
+              <p className="text-xl font-bold text-[#1a3a5c]">
+                {school.tuition_min && school.tuition_max
+                  ? `${formatPrice(school.tuition_min)} — ${formatPrice(school.tuition_max)}`
+                  : school.tuition_min
+                  ? formatPrice(school.tuition_min)
+                  : formatPrice(school.tuition_max!)}
+              </p>
             </div>
-          </div>
+          )}
 
-          {/* Actions */}
-          <div className="space-y-2">
+          {/* Contact */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 className="text-sm font-medium text-gray-500">Холбоо барих</h3>
+
+            {school.address && (
+              <div className="flex items-start gap-2 text-sm text-gray-700">
+                <MapPin className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
+                <span>{school.address}</span>
+              </div>
+            )}
+
             {school.phone && (
-              <a href={`tel:${school.phone}`} className="block">
-                <Button className="w-full" size="lg">
-                  <Phone className="mr-2 h-4 w-4" />
-                  Залгах: {school.phone}
-                </Button>
+              <a href={`tel:${school.phone}`} className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#1a3a5c]">
+                <Phone className="h-4 w-4 text-gray-400 shrink-0" />
+                {school.phone}
               </a>
             )}
-            {websiteHref && (
-              <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="block">
-                <Button variant="outline" className="w-full">
-                  <Globe className="mr-2 h-4 w-4" />
-                  Вэбсайт нээх
-                </Button>
+
+            {school.email && (
+              <a href={`mailto:${school.email}`} className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#1a3a5c]">
+                <Mail className="h-4 w-4 text-gray-400 shrink-0" />
+                {school.email}
+              </a>
+            )}
+
+            {school.website && (
+              <a href={school.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                <Globe className="h-4 w-4 shrink-0" />
+                Вэбсайт
+              </a>
+            )}
+
+            {school.facebook && (
+              <a href={school.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                <Facebook className="h-4 w-4 shrink-0" />
+                Facebook
               </a>
             )}
           </div>
 
-          {/* Suggest correction */}
-          <div className="rounded-xl border border-dashed p-4 text-center">
-            <p className="text-xs text-gray-500">Мэдээлэл буруу байна уу?</p>
-            <a
-              href={`mailto:info@edufind.mn?subject=Засвар: ${school.name}&body=Засах мэдээлэл:%0A`}
-              className="mt-1 text-xs font-medium text-[#1ea572] hover:underline"
-            >
-              Засуулах хүсэлт илгээх
-            </a>
+          {/* Tier badge */}
+          <div className={`rounded-2xl p-4 text-center text-sm font-medium ${
+            school.tier === 'premium' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+            school.tier === 'standard' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+            'bg-gray-50 text-gray-600 border border-gray-200'
+          }`}>
+            {school.tier === 'premium' ? '👑 Premium гишүүн' :
+             school.tier === 'standard' ? '⭐ Standard гишүүн' :
+             'Basic гишүүн'}
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

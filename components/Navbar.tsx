@@ -40,6 +40,12 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
+            href="/register"
+            className="rounded-md border border-[#1a3a5c] px-4 py-2 text-sm font-medium text-[#1a3a5c] hover:bg-[#1a3a5c] hover:text-white transition-colors"
+          >
+            Бүртгүүлэх
+          </Link>
+          <Link
             href="/search"
             className="rounded-md bg-[#1ea572] px-4 py-2 text-sm font-medium text-white hover:bg-[#25c588] transition-colors"
           >
@@ -73,6 +79,13 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/register"
+            onClick={() => setMenuOpen(false)}
+            className="mt-2 block rounded-md border border-[#1a3a5c] px-4 py-2 text-center text-sm font-medium text-[#1a3a5c]"
+          >
+            Бүртгүүлэх
+          </Link>
           <Link
             href="/search"
             onClick={() => setMenuOpen(false)}
