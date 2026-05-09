@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell } from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 
 type School = {
@@ -37,11 +37,18 @@ type Announcement = {
   created_at: string
 }
 
+type MonthStat = {
+  month: string
+  count: number
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   ebs: 'ЕБС',
   ids: 'Олон улсын сургууль',
   surgalt: 'Сургалтын төв',
 }
+
+const MONTH_NAMES = ['1-р сар', '2-р сар', '3-р сар', '4-р сар', '5-р сар', '6-р сар', '7-р сар', '8-р сар', '9-р сар', '10-р сар', '11-р сар', '12-р сар']
 
 function formatPrice(price: number) {
   return (price / 1000000).toFixed(1) + ' сая ₮'
@@ -55,6 +62,7 @@ export default function SchoolProfilePage() {
   const [notFound, setNotFound] = useState(false)
   const [viewCount, setViewCount] = useState<number>(0)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [monthlyStats, setMonthlyStats] = useState<MonthStat[]>([])
 
   useEffect(() => {
     if (!slug) return
@@ -92,6 +100,33 @@ export default function SchoolProfilePage() {
         .order('created_at', { ascending: false })
         .limit(5)
       if (annData) setAnnouncements(annData)
+
+      // Сарын статистик — Standard/Premium-д л авах
+      if (data.tier === 'standard' || data.tier === 'premium') {
+        const { data: viewsData } = await supabase
+          .from('school_views')
+          .select('viewed_at')
+          .eq('school_id', data.id)
+          .gte('viewed_at', new Date(new Date().getFullYear(), 0, 1).toISOString())
+
+        if (viewsData) {
+          const monthlyCounts: Record<number, number> = {}
+          viewsData.forEach((v) => {
+            const month = new Date(v.viewed_at).getMonth()
+            monthlyCounts[month] = (monthlyCounts[month] || 0) + 1
+          })
+
+          const currentMonth = new Date().getMonth()
+          const stats: MonthStat[] = []
+          for (let i = 0; i <= currentMonth; i++) {
+            stats.push({
+              month: MONTH_NAMES[i],
+              count: monthlyCounts[i] || 0,
+            })
+          }
+          setMonthlyStats(stats.slice(-6)) // Сүүлийн 6 сар
+        }
+      }
     }
     fetchSchool()
   }, [slug])
@@ -116,6 +151,9 @@ export default function SchoolProfilePage() {
       </div>
     )
   }
+
+  const maxCount = Math.max(...monthlyStats.map((s) => s.count), 1)
+  const canSeeStats = school.tier === 'standard' || school.tier === 'premium'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -245,7 +283,7 @@ export default function SchoolProfilePage() {
         {/* Sidebar */}
         <div className="space-y-4">
 
-          {/* Үзэлт статистик */}
+          {/* Нийт үзэлт */}
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h3 className="text-sm font-medium text-gray-500 mb-3">Статистик</h3>
             <div className="flex items-center gap-3">
@@ -257,6 +295,47 @@ export default function SchoolProfilePage() {
                 <p className="text-xs text-gray-500">Нийт үзэлт</p>
               </div>
             </div>
+          </div>
+
+          {/* Сарын статистик */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart2 className="h-4 w-4 text-[#1a3a5c]" />
+              <h3 className="text-sm font-medium text-gray-700">Сарын үзэлт</h3>
+            </div>
+
+            {canSeeStats ? (
+              monthlyStats.length > 0 ? (
+                <div className="space-y-2">
+                  {monthlyStats.map((stat) => (
+                    <div key={stat.month} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-14 shrink-0">{stat.month}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-[#1a3a5c] h-2 rounded-full transition-all"
+                          style={{ width: `${(stat.count / maxCount) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 w-6 text-right">{stat.count}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">Энэ оны үзэлт байхгүй байна</p>
+              )
+            ) : (
+              <div className="text-center py-3">
+                <p className="text-xs text-gray-500 mb-2">
+                  ⭐ Standard тариф авснаар сарын статистикийг харах боломжтой болно
+                </p>
+                <Link
+                  href="/pricing"
+                  className="text-xs text-[#1a3a5c] font-medium hover:underline"
+                >
+                  Тариф ахиулах →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Tuition */}
