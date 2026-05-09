@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 type School = {
@@ -46,6 +46,7 @@ export default function SchoolProfilePage() {
   const [school, setSchool] = useState<School | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [viewCount, setViewCount] = useState<number>(0)
 
   useEffect(() => {
     if (!slug) return
@@ -58,10 +59,25 @@ export default function SchoolProfilePage() {
 
       if (error || !data) {
         setNotFound(true)
-      } else {
-        setSchool(data)
+        setLoading(false)
+        return
       }
+
+      setSchool(data)
       setLoading(false)
+
+      // Үзэлт бүртгэх
+      await supabase.from('school_views').insert({
+        school_id: data.id,
+      })
+
+      // Нийт үзэлт тоолох
+      const { count } = await supabase
+        .from('school_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', data.id)
+
+      if (count !== null) setViewCount(count)
     }
     fetchSchool()
   }, [slug])
@@ -130,6 +146,11 @@ export default function SchoolProfilePage() {
                   <MapPin className="h-3.5 w-3.5" />
                   {school.district}
                 </span>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" />
+                  {viewCount} үзэлт
+                </span>
               </div>
             </div>
           </div>
@@ -188,6 +209,20 @@ export default function SchoolProfilePage() {
         {/* Sidebar */}
         <div className="space-y-4">
 
+          {/* Үзэлт статистик */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500 mb-3">Статистик</h3>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                <Eye className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{viewCount}</p>
+                <p className="text-xs text-gray-500">Нийт үзэлт</p>
+              </div>
+            </div>
+          </div>
+
           {/* Tuition */}
           {(school.tuition_min || school.tuition_max) && (
             <div className="bg-white rounded-2xl p-5 shadow-sm">
@@ -212,28 +247,24 @@ export default function SchoolProfilePage() {
                 <span>{school.address}</span>
               </div>
             )}
-
             {school.phone && (
               <a href={`tel:${school.phone}`} className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#1a3a5c]">
                 <Phone className="h-4 w-4 text-gray-400 shrink-0" />
                 {school.phone}
               </a>
             )}
-
             {school.email && (
               <a href={`mailto:${school.email}`} className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#1a3a5c]">
                 <Mail className="h-4 w-4 text-gray-400 shrink-0" />
                 {school.email}
               </a>
             )}
-
             {school.website && (
               <a href={school.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                 <Globe className="h-4 w-4 shrink-0" />
                 Вэбсайт
               </a>
             )}
-
             {school.facebook && (
               <a href={school.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                 <Facebook className="h-4 w-4 shrink-0" />
