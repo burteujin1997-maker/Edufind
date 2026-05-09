@@ -1,5 +1,9 @@
+'use client'
+
 import Link from "next/link";
-import { Check, Mail } from "lucide-react";
+import { useState } from "react";
+import { Check, Mail, X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const plans = [
   {
@@ -78,28 +82,24 @@ const extras = [
     price: 150000,
     icon: "⭐",
     description: "Хайлтын үр дүнд дээр харагдана",
-    subject: "Онцлох зар захиалга",
   },
   {
     name: "Push мэдэгдэл 1 удаа",
     price: 99000,
     icon: "🔔",
     description: "Бүх хэрэглэгчдэд нэг удаа мэдэгдэл илгээнэ",
-    subject: "Push мэдэгдэл захиалга",
   },
   {
     name: "Нэмэлт видео",
     price: 50000,
     icon: "🎬",
     description: "Профайлд нэмэлт видео нэмэх",
-    subject: "Нэмэлт видео захиалга",
   },
   {
     name: "Сарын аналитик тайлан",
     price: 30000,
     icon: "📊",
     description: "Дэлгэрэнгүй үзэлт, статистик тайлан",
-    subject: "Аналитик тайлан захиалга",
   },
 ];
 
@@ -108,6 +108,41 @@ function formatPrice(price: number) {
 }
 
 export default function PricingPage() {
+  const [selectedService, setSelectedService] = useState<typeof extras[0] | null>(null)
+  const [form, setForm] = useState({ school_name: '', phone: '', email: '', note: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  const handleOrder = async () => {
+    if (!form.school_name || !form.phone || !form.email) {
+      alert('Байгууллагын нэр, утас, имэйлийг бөглөнө үү!')
+      return
+    }
+
+    setSubmitting(true)
+    const { error } = await supabase.from('extra_orders').insert({
+      service_name: selectedService?.name,
+      school_name: form.school_name,
+      phone: form.phone,
+      email: form.email,
+      note: form.note || null,
+      status: 'pending',
+    })
+
+    setSubmitting(false)
+    if (error) {
+      alert('Алдаа гарлаа: ' + error.message)
+    } else {
+      setSuccess(true)
+    }
+  }
+
+  const closeModal = () => {
+    setSelectedService(null)
+    setForm({ school_name: '', phone: '', email: '', note: '' })
+    setSuccess(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
@@ -125,16 +160,12 @@ export default function PricingPage() {
         {/* Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative bg-white rounded-2xl border-2 ${plan.color} shadow-sm overflow-hidden flex flex-col`}
-            >
+            <div key={plan.name} className={`relative bg-white rounded-2xl border-2 ${plan.color} shadow-sm overflow-hidden flex flex-col`}>
               {plan.badge && (
                 <div className={`absolute top-4 right-4 ${plan.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full`}>
                   {plan.badge}
                 </div>
               )}
-
               <div className={`${plan.headerColor} px-6 py-6`}>
                 <h2 className="text-xl font-bold text-gray-900">{plan.name}</h2>
                 <div className="mt-3">
@@ -146,7 +177,6 @@ export default function PricingPage() {
                   <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">-16%</span>
                 </div>
               </div>
-
               <div className="px-6 py-6 flex-1">
                 <ul className="space-y-3">
                   {plan.features.map((f) => (
@@ -163,16 +193,13 @@ export default function PricingPage() {
                   ))}
                 </ul>
               </div>
-
               <div className="px-6 pb-6">
                 <Link
                   href={`/register?tier=${plan.name.toLowerCase()}`}
                   className={`block text-center py-2.5 rounded-xl font-medium text-sm transition-colors ${
-                    plan.name === "Premium"
-                      ? "bg-purple-600 hover:bg-purple-700 text-white"
-                      : plan.name === "Standard"
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
-                      : "bg-[#1a3a5c] hover:bg-[#16324f] text-white"
+                    plan.name === "Premium" ? "bg-purple-600 hover:bg-purple-700 text-white" :
+                    plan.name === "Standard" ? "bg-blue-500 hover:bg-blue-600 text-white" :
+                    "bg-[#1a3a5c] hover:bg-[#16324f] text-white"
                   }`}
                 >
                   Бүртгүүлэх
@@ -195,7 +222,7 @@ export default function PricingPage() {
         <div className="mt-12">
           <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Нэмэлт үйлчилгээ</h2>
           <p className="text-center text-gray-500 text-sm mb-6">
-            Захиалахын тулд товч дарахад имэйл нээгдэнэ. Бид 1 ажлын өдрийн дотор холбогдоно.
+            Захиалах товч дарж мэдээлэл оруулаарай. Бид 1 ажлын өдрийн дотор холбогдоно.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {extras.map((e) => (
@@ -204,12 +231,12 @@ export default function PricingPage() {
                 <p className="font-semibold text-gray-900 text-sm">{e.name}</p>
                 <p className="text-xs text-gray-500 mt-1 flex-1">{e.description}</p>
                 <p className="text-xl font-bold text-[#1a3a5c] mt-3">{formatPrice(e.price)}</p>
-                <a
-                  href={`mailto:edufind2026@gmail.com?subject=${encodeURIComponent(e.subject)}&body=${encodeURIComponent(`Сайн байна уу,\n\n${e.name} үйлчилгээг захиалахыг хүсч байна.\n\nБайгууллагын нэр: \nУтас: \nИмэйл: \n\nБаярлалаа.`)}`}
-                  className="mt-3 block text-center bg-[#1a3a5c] hover:bg-[#16324f] text-white text-sm font-medium py-2 rounded-xl transition-colors"
+                <button
+                  onClick={() => setSelectedService(e)}
+                  className="mt-3 block w-full text-center bg-[#1a3a5c] hover:bg-[#16324f] text-white text-sm font-medium py-2 rounded-xl transition-colors"
                 >
                   Захиалах
-                </a>
+                </button>
               </div>
             ))}
           </div>
@@ -231,6 +258,98 @@ export default function PricingPage() {
           </a>
         </div>
       </div>
+
+      {/* Захиалгын Modal */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+
+            {success ? (
+              <div className="text-center py-4">
+                <div className="text-5xl mb-3">✅</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Захиалга илгээгдлээ!</h3>
+                <p className="text-gray-500 text-sm mb-6">
+                  Бид 1 ажлын өдрийн дотор <strong>{form.email}</strong> хаяг руу холбогдоно.
+                </p>
+                <button
+                  onClick={closeModal}
+                  className="bg-[#1a3a5c] hover:bg-[#16324f] text-white font-medium px-6 py-2.5 rounded-xl w-full"
+                >
+                  Хаах
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{selectedService.icon} {selectedService.name}</h3>
+                    <p className="text-[#1a3a5c] font-semibold">{formatPrice(selectedService.price)}</p>
+                  </div>
+                  <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Байгууллагын нэр *</label>
+                    <input
+                      value={form.school_name}
+                      onChange={(e) => setForm((f) => ({ ...f, school_name: e.target.value }))}
+                      placeholder="Байгууллагын нэр"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Утас *</label>
+                    <input
+                      value={form.phone}
+                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                      placeholder="99001234"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Имэйл *</label>
+                    <input
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                      placeholder="info@school.mn"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Нэмэлт тайлбар</label>
+                    <textarea
+                      value={form.note}
+                      onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+                      placeholder="Нэмэлт мэдээлэл..."
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30 resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl hover:bg-gray-50 text-sm"
+                  >
+                    Болих
+                  </button>
+                  <button
+                    onClick={handleOrder}
+                    disabled={submitting}
+                    className="flex-1 bg-[#1ea572] hover:bg-[#25c588] disabled:opacity-50 text-white font-medium py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    {submitting ? 'Илгээж байна...' : '✓ Захиалах'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
