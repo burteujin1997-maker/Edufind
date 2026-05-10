@@ -20,6 +20,10 @@ export interface School {
   images?: string[] | null;
   is_featured: boolean;
   is_verified: boolean;
+  is_approved?: boolean;
+tier?: string | null;
+video_url?: string | null;
+contact_person?: string | null;
   created_at: string;
 }
 
