@@ -14,7 +14,6 @@ import SchoolCard from "@/components/SchoolCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -24,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES, DISTRICTS, FEATURE_OPTIONS, SORT_OPTIONS, type School, type SearchFilters } from "@/lib/types";
+import { CATEGORIES, DISTRICTS, EBS_FEATURES, IDS_FEATURES, SURGALT_FEATURES, FEATURE_OPTIONS, SORT_OPTIONS, type School, type SearchFilters } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 
 interface Props {
@@ -48,7 +47,7 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
   const [expandedSections, setExpandedSections] = useState({
     category: true,
     district: true,
-    features: false,
+    features: true,
     tuition: true,
   });
 
@@ -79,7 +78,7 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
 
   function handleCategory(cat: string) {
     const current = searchParams.get("category");
-    updateParams({ category: current === cat ? undefined : cat });
+    updateParams({ category: current === cat ? undefined : cat, features: undefined });
   }
 
   function handleDistrict(d: string) {
@@ -117,6 +116,20 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
   const activeSort = searchParams.get("sort") ?? "name";
 
   const hasFilters = !!(activeCategory || activeDistrict || activeFeatures.length || searchParams.get("tuition_max") || initialFilters.query);
+
+  // Ангилалаас хамаарч features харуулах
+  const getFeatureOptions = () => {
+    if (activeCategory === "ids") return IDS_FEATURES;
+    if (activeCategory === "surgalt") return SURGALT_FEATURES;
+    if (activeCategory === "ebs") return EBS_FEATURES;
+    return FEATURE_OPTIONS;
+  }
+
+  const getFeatureTitle = () => {
+    if (activeCategory === "ids") return "Мэргэжил";
+    if (activeCategory === "surgalt") return "Чиглэл";
+    return "Онцлог / Хэл / Хөтөлбөр";
+  }
 
   function toggle(key: keyof typeof expandedSections) {
     setExpandedSections((s) => ({ ...s, [key]: !s[key] }));
@@ -183,16 +196,18 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
 
       <Separator />
 
-      <FilterSection title="Онцлог / Хэл / Хөтөлбөр" sectionKey="features">
-        {FEATURE_OPTIONS.map((f) => (
-          <label key={f} className="flex cursor-pointer items-center gap-2">
-            <Checkbox
-              checked={activeFeatures.includes(f)}
-              onCheckedChange={() => handleFeature(f)}
-            />
-            <span className="text-sm">{f}</span>
-          </label>
-        ))}
+      <FilterSection title={getFeatureTitle()} sectionKey="features">
+        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+          {getFeatureOptions().map((f) => (
+            <label key={f} className="flex cursor-pointer items-center gap-2">
+              <Checkbox
+                checked={activeFeatures.includes(f)}
+                onCheckedChange={() => handleFeature(f)}
+              />
+              <span className="text-sm">{f}</span>
+            </label>
+          ))}
+        </div>
       </FilterSection>
 
       <Separator />
@@ -229,7 +244,6 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Mobile filter toggle */}
           <Button
             variant="outline"
             size="sm"
@@ -243,7 +257,6 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
             )}
           </Button>
 
-          {/* Sort */}
           <Select value={activeSort} onValueChange={handleSort}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Эрэмбэлэх" />
@@ -257,19 +270,16 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
             </SelectContent>
           </Select>
 
-          {/* View toggle */}
           <div className="flex rounded-md border overflow-hidden">
             <button
               onClick={() => setView("grid")}
               className={`p-2 ${view === "grid" ? "bg-[#1a3a5c] text-white" : "text-gray-400 hover:bg-gray-50"}`}
-              title="Grid харагдац"
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
             <button
               onClick={() => setView("list")}
               className={`p-2 ${view === "list" ? "bg-[#1a3a5c] text-white" : "text-gray-400 hover:bg-gray-50"}`}
-              title="List харагдац"
             >
               <List className="h-4 w-4" />
             </button>
@@ -300,7 +310,7 @@ export default function SearchClient({ initialSchools, initialFilters, view: ini
           </div>
         </aside>
 
-        {/* Mobile sidebar overlay */}
+        {/* Mobile sidebar */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div
