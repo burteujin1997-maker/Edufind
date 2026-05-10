@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "EduFind.mn — Улаанбаатарын сургалтын байгууллагын лавлах",
   description: "Улаанбаатар хотын ЕБС, их дээд сургууль, сургалтын байгууллагыг нэг дороос хайж олоорой.",
