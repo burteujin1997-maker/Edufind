@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell, BarChart2 } from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell, BarChart2, TrendingUp, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
 type School = {
@@ -61,6 +61,8 @@ export default function SchoolProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [viewCount, setViewCount] = useState<number>(0)
+  const [todayViews, setTodayViews] = useState<number>(0)
+  const [weekViews, setWeekViews] = useState<number>(0)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [monthlyStats, setMonthlyStats] = useState<MonthStat[]>([])
 
@@ -85,14 +87,14 @@ export default function SchoolProfilePage() {
       // Үзэлт бүртгэх
       await supabase.from('school_views').insert({ school_id: data.id })
 
-      // Нийт үзэлт тоолох
+      // Нийт үзэлт
       const { count } = await supabase
         .from('school_views')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', data.id)
       if (count !== null) setViewCount(count)
 
-      // Мэдэгдлүүд авах
+      // Мэдэгдлүүд
       const { data: annData } = await supabase
         .from('announcements')
         .select('id, title, content, created_at')
@@ -101,7 +103,7 @@ export default function SchoolProfilePage() {
         .limit(5)
       if (annData) setAnnouncements(annData)
 
-      // Сарын статистик — Standard/Premium-д л авах
+      // Standard/Premium — сарын статистик
       if (data.tier === 'standard' || data.tier === 'premium') {
         const { data: viewsData } = await supabase
           .from('school_views')
@@ -124,8 +126,31 @@ export default function SchoolProfilePage() {
               count: monthlyCounts[i] || 0,
             })
           }
-          setMonthlyStats(stats.slice(-6)) // Сүүлийн 6 сар
+          setMonthlyStats(stats.slice(-6))
         }
+      }
+
+      // Premium — өнөөдрийн болон 7 хоногийн үзэлт
+      if (data.tier === 'premium') {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const { count: todayCount } = await supabase
+          .from('school_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('school_id', data.id)
+          .gte('viewed_at', today.toISOString())
+        if (todayCount !== null) setTodayViews(todayCount)
+
+        const weekAgo = new Date()
+        weekAgo.setDate(weekAgo.getDate() - 7)
+
+        const { count: weekCount } = await supabase
+          .from('school_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('school_id', data.id)
+          .gte('viewed_at', weekAgo.toISOString())
+        if (weekCount !== null) setWeekViews(weekCount)
       }
     }
     fetchSchool()
@@ -154,6 +179,7 @@ export default function SchoolProfilePage() {
 
   const maxCount = Math.max(...monthlyStats.map((s) => s.count), 1)
   const canSeeStats = school.tier === 'standard' || school.tier === 'premium'
+  const isPremium = school.tier === 'premium'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -295,6 +321,26 @@ export default function SchoolProfilePage() {
                 <p className="text-xs text-gray-500">Нийт үзэлт</p>
               </div>
             </div>
+
+            {/* Premium — өнөөдрийн болон 7 хоногийн үзэлт */}
+            {isPremium && (
+              <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
+                <div className="bg-purple-50 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Calendar className="h-3.5 w-3.5 text-purple-600" />
+                    <span className="text-xs text-purple-600 font-medium">Өнөөдөр</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-700">{todayViews}</p>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <TrendingUp className="h-3.5 w-3.5 text-purple-600" />
+                    <span className="text-xs text-purple-600 font-medium">7 хоног</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-700">{weekViews}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Сарын статистик */}
@@ -302,6 +348,9 @@ export default function SchoolProfilePage() {
             <div className="flex items-center gap-2 mb-3">
               <BarChart2 className="h-4 w-4 text-[#1a3a5c]" />
               <h3 className="text-sm font-medium text-gray-700">Сарын үзэлт</h3>
+              {isPremium && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full ml-auto">👑 Premium</span>
+              )}
             </div>
 
             {canSeeStats ? (
@@ -312,7 +361,7 @@ export default function SchoolProfilePage() {
                       <span className="text-xs text-gray-500 w-14 shrink-0">{stat.month}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-2">
                         <div
-                          className="bg-[#1a3a5c] h-2 rounded-full transition-all"
+                          className={`h-2 rounded-full transition-all ${isPremium ? 'bg-purple-500' : 'bg-[#1a3a5c]'}`}
                           style={{ width: `${(stat.count / maxCount) * 100}%` }}
                         />
                       </div>
@@ -328,10 +377,7 @@ export default function SchoolProfilePage() {
                 <p className="text-xs text-gray-500 mb-2">
                   ⭐ Standard тариф авснаар сарын статистикийг харах боломжтой болно
                 </p>
-                <Link
-                  href="/pricing"
-                  className="text-xs text-[#1a3a5c] font-medium hover:underline"
-                >
+                <Link href="/pricing" className="text-xs text-[#1a3a5c] font-medium hover:underline">
                   Тариф ахиулах →
                 </Link>
               </div>
