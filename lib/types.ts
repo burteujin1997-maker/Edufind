@@ -75,9 +75,9 @@ export const SURGALT_FEATURES = [
   "Нягтлан бодох бүртгэл", "Мэдээллийн технологи",
 ];
 
-export const FEATURE_OPTIONS = [
-  ...new Set([...EBS_FEATURES, ...IDS_FEATURES, ...SURGALT_FEATURES]),
-];
+export const FEATURE_OPTIONS = Array.from(
+  new Set([...EBS_FEATURES, ...IDS_FEATURES, ...SURGALT_FEATURES])
+);
 
 export const SORT_OPTIONS = [
   { value: "name", label: "Нэрээр" },
