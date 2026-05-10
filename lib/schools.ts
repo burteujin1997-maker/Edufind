@@ -35,13 +35,25 @@ export async function getSchools(filters: SearchFilters = {}): Promise<School[]>
   }
 
   const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function getFeaturedSchools(): Promise<School[]> {
+  export async function getFeaturedSchools(): Promise<School[]> {
   const { data, error } = await supabase
     .from("schools")
+    .select("*")
+    .eq("is_featured", true)
+    .order("name")
+    .limit(6);
+  if (error) throw error;
+
+  const sorted = (data ?? []).sort((a, b) => {
+    if (a.tier === "premium" && b.tier !== "premium") return -1;
+    if (a.tier !== "premium" && b.tier === "premium") return 1;
+    if (a.tier === "standard" && b.tier === "basic") return -1;
+    if (a.tier === "basic" && b.tier === "standard") return 1;
+    return 0;
+  });
+
+  return sorted;
+}
     .select("*")
     .eq("is_featured", true)
     .order("name")
