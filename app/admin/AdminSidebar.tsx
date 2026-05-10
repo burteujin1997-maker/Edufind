@@ -9,7 +9,8 @@ const links = [
   { href: "/admin/schools", label: "Байгууллагууд", icon: Building2 },
  { href: "/admin/requests", label: "Бүртгэлийн хүсэлт", icon: PlusCircle },
  { href: "/admin/announcements", label: "Мэдэгдлүүд", icon: Bell },
-];{ href: "/admin/orders", label: "Захиалгууд", icon: ShoppingBag },
+{ href: "/admin/orders", label: "Захиалгууд", icon: ShoppingBag },
+];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
