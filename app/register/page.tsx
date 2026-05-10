@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { GraduationCap, Check } from 'lucide-react'
@@ -44,7 +44,7 @@ const CATEGORIES = [
   { id: 'surgalt', label: 'Сургалтын төв' },
 ]
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const searchParams = useSearchParams()
   const defaultTier = searchParams.get('tier') || 'basic'
 
@@ -377,5 +377,12 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterPageInner />
+    </Suspense>
   )
 }
