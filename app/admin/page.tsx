@@ -1,182 +1,166 @@
-'use client'
+import Link from "next/link";
+import { Suspense } from "react";
+import { Search, BookOpen, Building2, GraduationCap, ArrowRight } from "lucide-react";
+import { getFeaturedSchools, getStats } from "@/lib/schools";
+import SchoolCard from "@/components/SchoolCard";
+import { SkeletonGrid } from "@/components/SkeletonCard";
+import HeroSearch from "@/components/HeroSearch";
+import SponsoredBanners from "@/components/SponsoredBanners";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
-import { Building2, Clock, Eye, MessageSquare } from 'lucide-react'
-
-type ViewStat = {
-  name: string
-  slug: string
-  count: number
+async function FeaturedSchools() {
+  const schools = await getFeaturedSchools();
+  if (schools.length === 0) return null;
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {schools.map((school) => (
+        <SchoolCard key={school.id} school={school} />
+      ))}
+    </div>
+  );
 }
 
-export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({
-    totalSchools: 0,
-    pendingRequests: 0,
-    totalViews: 0,
-    totalAnnouncements: 0,
-  })
-  const [topSchools, setTopSchools] = useState<ViewStat[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true)
-
-      // Нийт байгууллага
-      const { count: schoolCount } = await supabase
-        .from('schools')
-        .select('*', { count: 'exact', head: true })
-
-      // Хүлээгдэж байгаа хүсэлт
-      const { count: pendingCount } = await supabase
-        .from('registration_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-
-      // Нийт үзэлт
-      const { count: viewCount } = await supabase
-        .from('school_views')
-        .select('*', { count: 'exact', head: true })
-
-      // Нийт мэдэгдэл
-      const { count: annCount } = await supabase
-        .from('announcements')
-        .select('*', { count: 'exact', head: true })
-
-      setStats({
-        totalSchools: schoolCount || 0,
-        pendingRequests: pendingCount || 0,
-        totalViews: viewCount || 0,
-        totalAnnouncements: annCount || 0,
-      })
-
-      // Их үзэлттэй байгууллагууд
-      const { data: schools } = await supabase
-        .from('schools')
-        .select('id, name, slug')
-
-      if (schools) {
-        const viewCounts = await Promise.all(
-          schools.map(async (school) => {
-            const { count } = await supabase
-              .from('school_views')
-              .select('*', { count: 'exact', head: true })
-              .eq('school_id', school.id)
-            return { name: school.name, slug: school.slug, count: count || 0 }
-          })
-        )
-        const sorted = viewCounts.sort((a, b) => b.count - a.count).slice(0, 5)
-        setTopSchools(sorted)
-      }
-
-      setLoading(false)
-    }
-
-    fetchStats()
-  }, [])
-
-  const statCards = [
-    {
-      label: 'Нийт байгууллага',
-      value: stats.totalSchools,
-      icon: Building2,
-      color: 'bg-blue-50 text-blue-600',
-      href: '/admin/schools',
-    },
-    {
-      label: 'Хүлээгдэж байгаа хүсэлт',
-      value: stats.pendingRequests,
-      icon: Clock,
-      color: 'bg-yellow-50 text-yellow-600',
-      href: '/admin/requests',
-    },
-    {
-      label: 'Нийт үзэлт',
-      value: stats.totalViews,
-      icon: Eye,
-      color: 'bg-green-50 text-green-600',
-      href: '#',
-    },
-    {
-      label: 'Нийт мэдэгдэл',
-      value: stats.totalAnnouncements,
-      icon: MessageSquare,
-      color: 'bg-purple-50 text-purple-600',
-      href: '/admin/announcements',
-    },
-  ]
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a3a5c]" />
-      </div>
-    )
-  }
-
+async function Stats() {
+  const stats = await getStats();
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Хяналтын самбар</h1>
-        <p className="text-gray-500 mt-1">EduFind.mn-ийн ерөнхий статистик</p>
+    <div className="grid grid-cols-3 gap-4">
+      <div className="text-center">
+        <p className="text-3xl font-bold text-white">{stats.total}+</p>
+        <p className="text-sm text-blue-200">Байгууллага</p>
       </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((card) => (
-          <Link key={card.label} href={card.href}>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.color}`}>
-                  <card.icon className="h-5 w-5" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{card.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{card.label}</p>
-            </div>
-          </Link>
-        ))}
+      <div className="text-center">
+        <p className="text-3xl font-bold text-white">{stats.districts}</p>
+        <p className="text-sm text-blue-200">Дүүрэг</p>
       </div>
-
-      {/* Их үзэлттэй байгууллагууд */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">🔥 Их үзэлттэй байгууллагууд</h2>
-        {topSchools.length === 0 ? (
-          <p className="text-gray-400 text-sm">Үзэлт байхгүй байна</p>
-        ) : (
-          <div className="space-y-3">
-            {topSchools.map((school, i) => (
-              <div key={school.slug} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                    i === 0 ? 'bg-yellow-100 text-yellow-700' :
-                    i === 1 ? 'bg-gray-100 text-gray-700' :
-                    i === 2 ? 'bg-orange-100 text-orange-700' :
-                    'bg-gray-50 text-gray-500'
-                  }`}>
-                    {i + 1}
-                  </span>
-                  <a
-                    href={`/school/${school.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-gray-900 hover:text-[#1a3a5c]"
-                  >
-                    {school.name}
-                  </a>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <Eye className="h-3.5 w-3.5" />
-                  <span>{school.count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="text-center">
+        <p className="text-3xl font-bold text-white">{stats.categories}</p>
+        <p className="text-sm text-blue-200">Ангилал</p>
       </div>
     </div>
-  )
+  );
+}
+
+const CATEGORIES = [
+  {
+    href: "/search?category=ebs",
+    icon: BookOpen,
+    label: "Ерөнхий боловсролын сургууль",
+    short: "ЕБС",
+    color: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+    iconColor: "text-blue-600 bg-blue-100",
+  },
+  {
+    href: "/search?category=ids",
+    icon: GraduationCap,
+    label: "Их Дээд Сургууль",
+    short: "ИДС",
+    color: "bg-green-50 border-green-200 hover:bg-green-100",
+    iconColor: "text-green-600 bg-green-100",
+  },
+  {
+    href: "/search?category=surgalt",
+    icon: Building2,
+    label: "Сургалтын байгууллага",
+    short: "Сургалт",
+    color: "bg-amber-50 border-amber-200 hover:bg-amber-100",
+    iconColor: "text-amber-600 bg-amber-100",
+  },
+];
+
+export default function HomePage() {
+  return (
+    <div className="flex flex-col">
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-[#1a3a5c] to-[#2a5a8c] py-16 md:py-24">
+        <div className="container mx-auto max-w-4xl px-4 text-center">
+          <h1 className="text-3xl font-bold text-white md:text-5xl">
+            Өөрт тохирох сургуулиа <br />
+            <span className="text-[#1ea572]">хайж олоорой</span>
+          </h1>
+          <p className="mt-4 text-lg text-blue-200">
+            Улаанбаатар хотын ЕБС, их дээд сургууль, сургалтын байгууллагыг нэг дороос харцгаая
+          </p>
+          <div className="mt-8">
+            <HeroSearch />
+          </div>
+          <div className="mt-10">
+            <Suspense
+              fallback={
+                <div className="grid grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-12 rounded skeleton opacity-30" />
+                  ))}
+                </div>
+              }
+            >
+              <Stats />
+            </Suspense>
+          </div>
+        </div>
+      </section>
+
+      {/* Sponsored баннер */}
+      <Suspense fallback={null}>
+        <SponsoredBanners />
+      </Suspense>
+
+      {/* Category filters */}
+      <section className="py-12">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-6 text-center text-2xl font-bold text-[#1a3a5c]">Ангиллаар хайх</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.href}
+                href={cat.href}
+                className={`group flex items-center gap-4 rounded-xl border-2 p-5 transition-all ${cat.color}`}
+              >
+                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${cat.iconColor}`}>
+                  <cat.icon className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-[#1a3a5c]">{cat.short}</p>
+                  <p className="text-sm text-gray-600">{cat.label}</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured schools */}
+      <section className="bg-gray-50 py-12">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-[#1a3a5c]">Онцлох сургуулиуд</h2>
+            <Link href="/search" className="flex items-center gap-1 text-sm font-medium text-[#1ea572] hover:underline">
+              Бүгдийг харах <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <Suspense fallback={<SkeletonGrid count={6} />}>
+            <FeaturedSchools />
+          </Suspense>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-12">
+        <div className="container mx-auto max-w-2xl px-4 text-center">
+          <div className="rounded-2xl bg-[#1a3a5c] p-8 text-white">
+            <h2 className="text-2xl font-bold">Байгууллагаа бүртгүүлэх үү?</h2>
+            <p className="mt-2 text-blue-200">
+              Таны сургалтын байгууллагыг EduFind.mn-д бүртгүүлж, олон мянган хайгчид хүрч очоорой.
+            </p>
+            <Link
+              href="/register"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#1ea572] px-6 py-3 font-medium text-white hover:bg-[#25c588] transition-colors"
+            >
+              <Search className="h-4 w-4" />
+              Мэдээлэл илгээх
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GraduationCap, LayoutDashboard, Building2, LogOut, PlusCircle, Bell } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Building2, LogOut, PlusCircle, Bell, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -9,7 +9,7 @@ const links = [
   { href: "/admin/schools", label: "Байгууллагууд", icon: Building2 },
  { href: "/admin/requests", label: "Бүртгэлийн хүсэлт", icon: PlusCircle },
  { href: "/admin/announcements", label: "Мэдэгдлүүд", icon: Bell },
-];
+];{ href: "/admin/orders", label: "Захиалгууд", icon: ShoppingBag },
 
 export default function AdminSidebar() {
   const pathname = usePathname();
