@@ -1,4 +1,16 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Хайлт | EduFind.mn",
+  description: "Улаанбаатар хотын ЕБС, их дээд сургууль, сургалтын байгууллагуудыг хайж олоорой.",
+  keywords: "сургууль хайх, улаанбаатар сургууль, ЕБС, их дээд сургууль",
+  openGraph: {
+    title: "Сургууль хайх | EduFind.mn",
+    description: "Улаанбаатарын бүх сургалтын байгууллагыг нэг дороос хайж олоорой.",
+    type: "website",
+  },
+};
 import { getSchools } from "@/lib/schools";
 import type { SearchFilters } from "@/lib/types";
 import SearchClient from "./SearchClient";
