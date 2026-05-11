@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { GraduationCap, Check, FileText } from 'lucide-react'
+import { GraduationCap, Check, FileText, Lock, Eye, EyeOff } from 'lucide-react'
 
 const TIERS = [
   {
@@ -69,6 +69,7 @@ function RegisterPageInner() {
   const [success, setSuccess] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
     name: '',
     category: '',
@@ -76,6 +77,7 @@ function RegisterPageInner() {
     address: '',
     phone: '',
     email: '',
+    password: '',
     website: '',
     facebook: '',
     description: '',
@@ -91,9 +93,27 @@ function RegisterPageInner() {
       alert('Үйлчилгээний нөхцөлийг зөвшөөрнө үү!')
       return
     }
+    if (form.password.length < 6) {
+      alert('Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой!')
+      return
+    }
 
     setLoading(true)
-    const { error } = await supabase.from('registration_requests').insert({
+
+    // 1. Supabase Auth-д бүртгэл үүсгэх
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+    })
+
+    if (authError) {
+      alert('Бүртгэл үүсгэхэд алдаа гарлаа: ' + authError.message)
+      setLoading(false)
+      return
+    }
+
+    // 2. Бүртгэлийн хүсэлт илгээх
+    const { error: reqError } = await supabase.from('registration_requests').insert({
       name: form.name,
       category: form.category,
       district: form.district,
@@ -106,11 +126,12 @@ function RegisterPageInner() {
       contact_person: form.contact_person || null,
       tier: form.tier,
       status: 'pending',
+      user_id: authData.user?.id || null,
     })
 
     setLoading(false)
-    if (error) {
-      alert('Алдаа гарлаа: ' + error.message)
+    if (reqError) {
+      alert('Алдаа гарлаа: ' + reqError.message)
     } else {
       setSuccess(true)
     }
@@ -127,6 +148,13 @@ function RegisterPageInner() {
           <p className="text-gray-500 mb-4">
             Таны бүртгэлийн хүсэлтийг хүлээн авлаа. Бид 1-2 ажлын өдрийн дотор холбогдох болно.
           </p>
+
+          {/* Dashboard мэдээлэл */}
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left mb-4 text-sm">
+            <p className="font-semibold text-green-700 mb-1">🔐 Dashboard нэвтрэх мэдээлэл:</p>
+            <p className="text-gray-600">Имэйл: <strong>{form.email}</strong></p>
+            <p className="text-gray-500 text-xs mt-1">Admin зөвшөөрсний дараа /dashboard хуудсаар нэвтэрнэ үү</p>
+          </div>
 
           {/* Төлбөрийн мэдээлэл */}
           <div className="bg-blue-50 rounded-xl p-4 text-left mb-6 text-sm">
@@ -190,31 +218,22 @@ function RegisterPageInner() {
 
         <div className="bg-white rounded-2xl shadow p-6">
 
-          {/* Step 1 - Тариф */}
+          {/* Step 1 */}
           {step === 1 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">1. Тариф сонгох</h2>
               <p className="text-sm text-gray-500 mb-5">Байгууллагынхаа хэрэгцээнд тохирох тарифыг сонгоно уу</p>
               <div className="space-y-3">
                 {TIERS.map((tier) => (
-                  <div
-                    key={tier.id}
-                    onClick={() => update('tier', tier.id)}
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                      form.tier === tier.id ? tier.activeColor : tier.color + ' hover:bg-gray-50'
-                    }`}
-                  >
+                  <div key={tier.id} onClick={() => update('tier', tier.id)}
+                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${form.tier === tier.id ? tier.activeColor : tier.color + ' hover:bg-gray-50'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          form.tier === tier.id ? 'border-[#1a3a5c] bg-[#1a3a5c]' : 'border-gray-300'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.tier === tier.id ? 'border-[#1a3a5c] bg-[#1a3a5c]' : 'border-gray-300'}`}>
                           {form.tier === tier.id && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                         <span className="font-bold text-gray-900">{tier.name}</span>
-                        {tier.badge && (
-                          <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">{tier.badge}</span>
-                        )}
+                        {tier.badge && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">{tier.badge}</span>}
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-[#1a3a5c]">{tier.price}/сар</p>
@@ -223,20 +242,16 @@ function RegisterPageInner() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 ml-7">
-                      {tier.features.map((f) => (
-                        <span key={f} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{f}</span>
-                      ))}
+                      {tier.features.map((f) => (<span key={f} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{f}</span>))}
                     </div>
                   </div>
                 ))}
               </div>
-              <button onClick={() => setStep(2)} className="mt-6 w-full bg-[#1a3a5c] hover:bg-[#16324f] text-white font-medium py-2.5 rounded-xl transition-colors">
-                Үргэлжлүүлэх →
-              </button>
+              <button onClick={() => setStep(2)} className="mt-6 w-full bg-[#1a3a5c] hover:bg-[#16324f] text-white font-medium py-2.5 rounded-xl transition-colors">Үргэлжлүүлэх →</button>
             </div>
           )}
 
-          {/* Step 2 - Мэдээлэл */}
+          {/* Step 2 */}
           {step === 2 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">2. Байгууллагын мэдээлэл</h2>
@@ -274,6 +289,28 @@ function RegisterPageInner() {
                     <input value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="info@school.mn" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30" />
                   </div>
                 </div>
+
+                {/* Dashboard нууц үг */}
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lock className="h-4 w-4 text-[#1a3a5c]" />
+                    <label className="text-sm font-medium text-[#1a3a5c]">Dashboard нууц үг *</label>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">Байгууллагын dashboard-д нэвтрэхэд ашиглах нууц үг</p>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(e) => update('password', e.target.value)}
+                      placeholder="Хамгийн багадаа 6 тэмдэгт"
+                      className="w-full border border-blue-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30 pr-10 bg-white"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Вэбсайт</label>
@@ -293,6 +330,10 @@ function RegisterPageInner() {
                       alert('Бүх шаардлагатай талбарыг бөглөнө үү!')
                       return
                     }
+                    if (!form.password || form.password.length < 6) {
+                      alert('Dashboard нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой!')
+                      return
+                    }
                     setStep(3)
                   }}
                   className="flex-1 bg-[#1a3a5c] hover:bg-[#16324f] text-white font-medium py-2.5 rounded-xl transition-colors"
@@ -303,7 +344,7 @@ function RegisterPageInner() {
             </div>
           )}
 
-          {/* Step 3 - Нэмэлт + Гэрээ */}
+          {/* Step 3 */}
           {step === 3 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">3. Нэмэлт мэдээлэл</h2>
@@ -318,33 +359,16 @@ function RegisterPageInner() {
                   <input value={form.contact_person} onChange={(e) => update('contact_person', e.target.value)} placeholder="Овог нэр" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30" />
                 </div>
 
-                {/* Хураангуй */}
                 <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
                   <p className="font-medium text-gray-700">Хүсэлтийн хураангуй:</p>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Байгууллага:</span>
-                    <span className="font-medium">{form.name}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Тариф:</span>
-                    <span className="font-medium capitalize">{form.tier} — {selectedTier?.price}/сар</span>
-                  </div>
-                  <div className="flex justify-between text-gray-400">
-                    <span>3 сарын үнэ:</span>
-                    <span className="line-through">{selectedTier?.threeMonth}</span>
-                  </div>
-                  <div className="flex justify-between text-green-600 font-bold">
-                    <span>🎉 50% хөнгөлөлттэй:</span>
-                    <span>{selectedTier?.discounted}</span>
-                  </div>
+                  <div className="flex justify-between text-gray-600"><span>Байгууллага:</span><span className="font-medium">{form.name}</span></div>
+                  <div className="flex justify-between text-gray-600"><span>Тариф:</span><span className="font-medium capitalize">{form.tier} — {selectedTier?.price}/сар</span></div>
+                  <div className="flex justify-between text-gray-400"><span>3 сарын үнэ:</span><span className="line-through">{selectedTier?.threeMonth}</span></div>
+                  <div className="flex justify-between text-green-600 font-bold"><span>🎉 50% хөнгөлөлттэй:</span><span>{selectedTier?.discounted}</span></div>
                 </div>
 
-                {/* Гэрээний нөхцөл */}
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setShowTerms(!showTerms)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
-                  >
+                  <button onClick={() => setShowTerms(!showTerms)} className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-[#1a3a5c]" />
                       <span className="text-sm font-medium text-gray-900">📄 Үйлчилгээний нөхцөл</span>
@@ -356,8 +380,7 @@ function RegisterPageInner() {
                       <ol className="space-y-2 mt-3">
                         {TERMS.map((term, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                            <span className="text-[#1a3a5c] font-bold shrink-0">{i + 1}.</span>
-                            {term}
+                            <span className="text-[#1a3a5c] font-bold shrink-0">{i + 1}.</span>{term}
                           </li>
                         ))}
                       </ol>
@@ -365,14 +388,8 @@ function RegisterPageInner() {
                   )}
                 </div>
 
-                {/* Зөвшөөрөх */}
                 <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1a3a5c] focus:ring-[#1a3a5c]"
-                  />
+                  <input type="checkbox" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1a3a5c] focus:ring-[#1a3a5c]" />
                   <span className="text-sm text-gray-600">
                     Би <button type="button" onClick={() => setShowTerms(true)} className="text-[#1a3a5c] font-medium underline">үйлчилгээний нөхцөл</button>-ийг уншиж, зөвшөөрч байна. Үйлчилгээний төлбөрийг <strong>3 сараар</strong> урьдчилан төлнө.
                   </span>
