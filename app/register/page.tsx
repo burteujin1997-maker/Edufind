@@ -106,11 +106,18 @@ function RegisterPageInner() {
       password: form.password,
     })
 
-    if (authError) {
-      alert('Бүртгэл үүсгэхэд алдаа гарлаа: ' + authError.message)
-      setLoading(false)
-      return
-    }
+    let userId = authData?.user?.id
+if (authError?.message?.includes('already registered')) {
+  const { data: signInData } = await supabase.auth.signInWithPassword({
+    email: form.email,
+    password: form.password,
+  })
+  userId = signInData?.user?.id
+} else if (authError) {
+  alert('Бүртгэл үүсгэхэд алдаа гарлаа: ' + authError.message)
+  setLoading(false)
+  return
+}
 
     // 2. Бүртгэлийн хүсэлт илгээх
     const { error: reqError } = await supabase.from('registration_requests').insert({
@@ -126,7 +133,7 @@ function RegisterPageInner() {
       contact_person: form.contact_person || null,
       tier: form.tier,
       status: 'pending',
-      user_id: authData.user?.id || null,
+      user_id: userId || null,
     })
 
     setLoading(false)
