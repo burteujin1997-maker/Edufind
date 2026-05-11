@@ -99,14 +99,29 @@ export default function AdminRequestsPage() {
       return
     }
 
-    await supabase
-      .from('registration_requests')
-      .update({ status: 'approved' })
-      .eq('id', req.id)
+    // Байгууллагын ID авах
+const { data: schoolData } = await supabase
+  .from('schools')
+  .select('id')
+  .eq('slug', slug)
+  .single()
 
-    setActionLoading(false)
-    setSelected(null)
-    fetchRequests()
+// user_id байвал school_users-д нэмэх
+if (schoolData && (req as any).user_id) {
+  await supabase.from('school_users').insert({
+    user_id: (req as any).user_id,
+    school_id: schoolData.id,
+  })
+}
+
+await supabase
+  .from('registration_requests')
+  .update({ status: 'approved' })
+  .eq('id', req.id)
+
+setActionLoading(false)
+setSelected(null)
+fetchRequests()
   }
 
   const handleReject = async (req: RegistrationRequest) => {
