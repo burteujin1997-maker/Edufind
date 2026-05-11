@@ -46,7 +46,7 @@ const DISTRICTS = [
 
 const CATEGORIES = [
   { id: 'ebs', label: 'Ерөнхий боловсролын сургууль (ЕБС)' },
-  { id: 'ids', label: 'Олон улсын сургууль' },
+ { id: 'ids', label: 'Их дээд сургууль' },
   { id: 'surgalt', label: 'Сургалтын төв' },
 ]
 
