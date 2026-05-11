@@ -11,8 +11,8 @@ export default function DashboardLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [message, setMessage] = useState('')
+  const [forgotMode, setForgotMode] = useState(false)
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -30,7 +30,6 @@ export default function DashboardLoginPage() {
       return
     }
 
-    // Байгууллагатай холбоотой эсэхийг шалгах
     const { data: schoolUser } = await supabase
       .from('school_users')
       .select('school_id, schools(slug)')
@@ -47,25 +46,23 @@ export default function DashboardLoginPage() {
     }
   }
 
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      setError('Имэйл болон нууц үгээ оруулна уу!')
-      return
-    }
-    if (password.length < 6) {
-      setError('Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой!')
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Имэйл хаягаа оруулна уу!')
       return
     }
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/dashboard/reset`,
+    })
 
     setLoading(false)
     if (error) {
-      setError('Бүртгэл үүсгэхэд алдаа гарлаа: ' + error.message)
+      setError('Алдаа гарлаа: ' + error.message)
     } else {
-      setMessage('Имэйл хаяг руу баталгаажуулах линк илгээлээ. Имэйлээ шалгаарай!')
+      setMessage('Нууц үг сэргээх линк имэйл рүү илгээлээ. Имэйлээ шалгаарай!')
     }
   }
 
@@ -83,10 +80,10 @@ export default function DashboardLoginPage() {
             <span className="text-2xl font-bold text-[#1ea572]">.mn</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900 mt-3">
-            {isSignUp ? 'Бүртгэл үүсгэх' : 'Байгууллагын нэвтрэх'}
+            {forgotMode ? 'Нууц үг сэргээх' : 'Байгууллагын нэвтрэх'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {isSignUp ? 'Шинэ бүртгэл үүсгэнэ үү' : 'Өөрийн байгууллагын dashboard руу нэвтрэх'}
+            {forgotMode ? 'Имэйл рүү сэргээх линк илгээнэ' : 'Өөрийн байгууллагын dashboard руу нэвтрэх'}
           </p>
         </div>
 
@@ -106,27 +103,36 @@ export default function DashboardLoginPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Нууц үг</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (isSignUp ? handleSignUp() : handleLogin())}
-                placeholder="••••••••"
-                className="w-full border border-gray-200 rounded-lg pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
-              />
+          {!forgotMode && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Нууц үг</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-200 rounded-lg pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => { setForgotMode(true); setError(''); setMessage('') }}
+                className="text-xs text-gray-400 hover:text-[#1a3a5c] mt-1.5 block text-right w-full transition-colors"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                Нууц үг мартсан уу?
               </button>
             </div>
-          </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
@@ -141,37 +147,36 @@ export default function DashboardLoginPage() {
           )}
 
           <button
-            onClick={isSignUp ? handleSignUp : handleLogin}
+            onClick={forgotMode ? handleForgotPassword : handleLogin}
             disabled={loading}
             className="w-full bg-[#1a3a5c] hover:bg-[#16324f] disabled:opacity-50 text-white font-medium py-2.5 rounded-xl transition-colors"
           >
-            {loading ? 'Уншиж байна...' : isSignUp ? 'Бүртгэл үүсгэх' : 'Нэвтрэх'}
+            {loading ? 'Уншиж байна...' : forgotMode ? 'Линк илгээх' : 'Нэвтрэх'}
           </button>
         </div>
 
-        {/* Switch */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          {isSignUp ? (
-            <>
-              Аль хэдийн бүртгэлтэй юу?{' '}
-              <button onClick={() => { setIsSignUp(false); setError(''); setMessage('') }} className="text-[#1a3a5c] font-medium hover:underline">
-                Нэвтрэх
-              </button>
-            </>
+        {/* Footer */}
+        <div className="mt-6 text-center space-y-2">
+          {forgotMode ? (
+            <button
+              onClick={() => { setForgotMode(false); setError(''); setMessage('') }}
+              className="text-sm text-[#1a3a5c] font-medium hover:underline"
+            >
+              ← Нэвтрэх хуудас руу буцах
+            </button>
           ) : (
-            <>
-              Бүртгэл байхгүй юу?{' '}
-              <button onClick={() => { setIsSignUp(true); setError(''); setMessage('') }} className="text-[#1a3a5c] font-medium hover:underline">
-                Бүртгэл үүсгэх
-              </button>
-            </>
+            <p className="text-sm text-gray-500">
+              Бүртгэлгүй байна уу?{' '}
+              <Link href="/register" className="text-[#1a3a5c] font-medium hover:underline">
+                Энд бүртгүүлэх
+              </Link>
+            </p>
           )}
-        </div>
-
-        <div className="mt-4 text-center">
-          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">
-            ← Нүүр хуудас руу буцах
-          </Link>
+          <div>
+            <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">
+              ← Нүүр хуудас руу буцах
+            </Link>
+          </div>
         </div>
       </div>
     </div>
