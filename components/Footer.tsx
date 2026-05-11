@@ -52,9 +52,9 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  Facebook
-                </a>
+               <a href="https://www.facebook.com/profile.php?id=61588755604478" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+  Facebook
+</a>
               </li>
               <li>
                 <Link href="/search" className="hover:text-white transition-colors">
