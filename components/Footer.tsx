@@ -52,6 +52,11 @@ export default function Footer() {
                 </a>
               </li>
               <li>
+  <a href="tel:+97689033927" className="hover:text-white transition-colors">
+    +976 8903 3927
+  </a>
+</li>
+              <li>
                <a href="https://www.facebook.com/profile.php?id=61588755604478" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
   Facebook
 </a>
