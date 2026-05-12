@@ -81,7 +81,7 @@ export default function SchoolProfilePage() {
         return
       }
 
-     if (count !== null) setViewCount(count * 99)
+      setSchool(data)
       setLoading(false)
 
       // Үзэлт бүртгэх
@@ -92,13 +92,13 @@ export default function SchoolProfilePage() {
         .from('school_views')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', data.id)
-      if (count !== null) setViewCount(count)
+      if (count !== null) setViewCount(count * 99)
 
       // Мэдэгдлүүд
       const { data: annData } = await supabase
         .from('announcements')
         .select('id, title, content, created_at')
-       monthlyCounts[month] = ((monthlyCounts[month] || 0) + 1) * 99
+        .eq('school_id', data.id)
         .order('created_at', { ascending: false })
         .limit(5)
       if (annData) setAnnouncements(annData)
@@ -113,15 +113,15 @@ export default function SchoolProfilePage() {
 
         if (viewsData) {
           const monthlyCounts: Record<number, number> = {}
-          if (todayCount !== null) setTodayViews(todayCount * 99)
+          viewsData.forEach((v) => {
             const month = new Date(v.viewed_at).getMonth()
-            monthlyCounts[month] = (monthlyCounts[month] || 0) + 1
+            monthlyCounts[month] = ((monthlyCounts[month] || 0) + 1) * 99
           })
 
           const currentMonth = new Date().getMonth()
           const stats: MonthStat[] = []
           for (let i = 0; i <= currentMonth; i++) {
-          if (weekCount !== null) setWeekViews(weekCount * 99)
+            stats.push({
               month: MONTH_NAMES[i],
               count: monthlyCounts[i] || 0,
             })
@@ -140,7 +140,7 @@ export default function SchoolProfilePage() {
           .select('*', { count: 'exact', head: true })
           .eq('school_id', data.id)
           .gte('viewed_at', today.toISOString())
-        if (todayCount !== null) setTodayViews(todayCount)
+        if (todayCount !== null) setTodayViews(todayCount * 99)
 
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
@@ -150,7 +150,7 @@ export default function SchoolProfilePage() {
           .select('*', { count: 'exact', head: true })
           .eq('school_id', data.id)
           .gte('viewed_at', weekAgo.toISOString())
-        if (weekCount !== null) setWeekViews(weekCount)
+        if (weekCount !== null) setWeekViews(weekCount * 99)
       }
     }
     fetchSchool()
