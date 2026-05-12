@@ -55,7 +55,7 @@ const CATEGORIES = [
 
 const STATS = [
   { icon: Building2, value: "21+", label: "Байгууллага", color: "text-blue-400" },
-  { icon: MapPin, value: "9", label: "Дүүрэг", color: "text-green-400" },
+{ icon: MapPin, value: "21", label: "Дүүрэг", color: "text-green-400" },
   { icon: Users, value: "50,000+", label: "Үзэлт", color: "text-purple-400" },
   { icon: Star, value: "3", label: "Ангилал", color: "text-amber-400" },
 ]
