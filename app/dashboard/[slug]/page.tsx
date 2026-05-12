@@ -163,7 +163,20 @@ export default function SchoolDashboardPage() {
       tuition_max: editForm.tuition_max ? Number(editForm.tuition_max) : null,
     }).eq('id', school?.id)
     setSaveLoading(false)
-    if (!error) { setSchool((prev) => prev ? { ...prev, ...editForm } : prev); setEditMode(false) }
+    if (!error) {
+  setSchool((prev) => prev ? {
+    ...prev,
+    phone: editForm.phone,
+    email: editForm.email,
+    website: editForm.website || null,
+    facebook: editForm.facebook || null,
+    description: editForm.description || null,
+    address: editForm.address || null,
+    tuition_min: editForm.tuition_min ? Number(editForm.tuition_min) : null,
+    tuition_max: editForm.tuition_max ? Number(editForm.tuition_max) : null,
+  } : prev)
+  setEditMode(false)
+}
   }
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
