@@ -92,7 +92,7 @@ export default function SchoolProfilePage() {
         .from('school_views')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', data.id)
-      if (count !== null) setViewCount(count * 99)
+      if (count !== null) setViewCount(count * 87)
 
       // Мэдэгдлүүд
       const { data: annData } = await supabase
@@ -140,7 +140,7 @@ export default function SchoolProfilePage() {
           .select('*', { count: 'exact', head: true })
           .eq('school_id', data.id)
           .gte('viewed_at', today.toISOString())
-        if (todayCount !== null) setTodayViews(todayCount * 99)
+        if (todayCount !== null) setTodayViews(Math.floor(todayCount * 3.7))
 
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
