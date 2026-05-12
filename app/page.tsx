@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Search, BookOpen, Building2, GraduationCap, ArrowRight, Star, Users, MapPin, TrendingUp } from "lucide-react";
-import { getFeaturedSchools } from "@/lib/schools";
+import { getFeaturedSchools, getStats } from "@/lib/schools";
 import SchoolCard from "@/components/SchoolCard";
 import { SkeletonGrid } from "@/components/SkeletonCard";
 import HeroSearch from "@/components/HeroSearch";
