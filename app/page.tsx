@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Search, BookOpen, Building2, GraduationCap, ArrowRight, Star, Users, MapPin, TrendingUp } from "lucide-react";
-import { getFeaturedSchools, getStats } from "@/lib/schools";
+import { getFeaturedSchools } from "@/lib/schools";
 import SchoolCard from "@/components/SchoolCard";
 import { SkeletonGrid } from "@/components/SkeletonCard";
 import HeroSearch from "@/components/HeroSearch";
@@ -17,8 +17,6 @@ async function FeaturedSchools() {
         <SchoolCard key={school.id} school={school} />
       ))}
     </div>
-  );
-}
   );
 }
 
@@ -56,9 +54,9 @@ const CATEGORIES = [
 ];
 
 const STATS = [
-{ icon: Building2, value: "500+", label: "Байгууллага", color: "text-blue-400" },
-{ icon: MapPin, value: "21", label: "Дүүрэг", color: "text-green-400" },
-  { icon: Users, value: "50,000+", label: "Үзэлт", color: "text-purple-400" },
+  { icon: Building2, value: "500+", label: "Байгууллага", color: "text-blue-400" },
+  { icon: MapPin, value: "21", label: "Дүүрэг", color: "text-green-400" },
+  { icon: Users, value: "1,000+", label: "Үзэлт", color: "text-purple-400" },
   { icon: Star, value: "3", label: "Ангилал", color: "text-amber-400" },
 ]
 
@@ -74,14 +72,12 @@ export default function HomePage() {
     <div className="flex flex-col">
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-[#0f2744] via-[#1a3a5c] to-[#1e4d7b] py-20 md:py-28 overflow-hidden">
-        {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-20 -right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative container mx-auto max-w-4xl px-4 text-center">
-          {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-blue-100 text-sm px-4 py-1.5 rounded-full mb-6">
             <TrendingUp className="h-3.5 w-3.5 text-green-400" />
             Монголын тэргүүлэх сургуулийн лавлах
@@ -100,7 +96,6 @@ export default function HomePage() {
             <HeroSearch />
           </div>
 
-          {/* Quick links */}
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             <span className="text-blue-300 text-sm">Түгээмэл хайлт:</span>
             {['Cambridge', 'STEM', 'Англи хэл', 'БЗД', 'Анагаах'].map((tag) => (
@@ -111,7 +106,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Stats */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {STATS.map((stat) => (
               <div key={stat.label} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
@@ -124,12 +118,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Sponsored */}
       <Suspense fallback={null}>
         <SponsoredBanners />
       </Suspense>
 
-      {/* Category filters */}
       <section className="py-14">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-8">
@@ -157,7 +149,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured schools */}
       <section className="bg-gray-50 py-14">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="mb-8 flex items-center justify-between">
@@ -169,13 +160,12 @@ export default function HomePage() {
               Бүгдийг харах <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <Suspense fallback={<SkeletonGrid count={6} />}>
+          <Suspense fallback={<SkeletonGrid count={3} />}>
             <FeaturedSchools />
           </Suspense>
         </div>
       </section>
 
-      {/* Why us */}
       <section className="py-14">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-10">
@@ -194,7 +184,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-14 bg-gradient-to-br from-[#0f2744] to-[#1a3a5c]">
         <div className="container mx-auto max-w-3xl px-4 text-center">
           <div className="text-5xl mb-4">🏫</div>
