@@ -18,12 +18,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1a3a5c]">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-[#1a3a5c]">EduFind</span>
-          <span className="text-xl font-bold text-[#1ea572]">.mn</span>
-        </Link>
+  <img src="/logo.png" alt="EduFind.mn" className="h-10 w-auto" />
+</Link>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
