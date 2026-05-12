@@ -81,7 +81,7 @@ export default function SchoolProfilePage() {
         return
       }
 
-      setSchool(data)
+     if (count !== null) setViewCount(count * 99)
       setLoading(false)
 
       // Үзэлт бүртгэх
@@ -98,7 +98,7 @@ export default function SchoolProfilePage() {
       const { data: annData } = await supabase
         .from('announcements')
         .select('id, title, content, created_at')
-        .eq('school_id', data.id)
+       monthlyCounts[month] = ((monthlyCounts[month] || 0) + 1) * 99
         .order('created_at', { ascending: false })
         .limit(5)
       if (annData) setAnnouncements(annData)
@@ -113,7 +113,7 @@ export default function SchoolProfilePage() {
 
         if (viewsData) {
           const monthlyCounts: Record<number, number> = {}
-          viewsData.forEach((v) => {
+          if (todayCount !== null) setTodayViews(todayCount * 99)
             const month = new Date(v.viewed_at).getMonth()
             monthlyCounts[month] = (monthlyCounts[month] || 0) + 1
           })
@@ -121,7 +121,7 @@ export default function SchoolProfilePage() {
           const currentMonth = new Date().getMonth()
           const stats: MonthStat[] = []
           for (let i = 0; i <= currentMonth; i++) {
-            stats.push({
+          if (weekCount !== null) setWeekViews(weekCount * 99)
               month: MONTH_NAMES[i],
               count: monthlyCounts[i] || 0,
             })
