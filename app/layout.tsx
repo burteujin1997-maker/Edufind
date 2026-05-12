@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: "Улаанбаатар хотын ЕБС, их дээд сургууль, сургалтын байгууллагыг нэг дороос хайж олоорой.",
   keywords: "сургууль, улаанбаатар, ЕБС, их дээд, сургалт, хайлт",
   verification: {
-    google: "-r21jJF0FH3stx6Qu615r2I5Ab-gWRI6YAUY7A6AtGA",
-  },
+  google: "WzDOcbSDcZ0QHAsPqZxV000qqui1BF-FPFImRFogsuA",
+},
   openGraph: {
     title: "EduFind.mn",
     description: "Улаанбаатарын сургалтын байгууллагын лавлах",
