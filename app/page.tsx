@@ -1,24 +1,11 @@
 "use client"
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Search, BookOpen, Building2, GraduationCap, ArrowRight, Star, Users, MapPin, TrendingUp } from "lucide-react";
-import { getFeaturedSchools } from "@/lib/schools";
 import SchoolCard from "@/components/SchoolCard";
-import { SkeletonGrid } from "@/components/SkeletonCard";
 import HeroSearch from "@/components/HeroSearch";
 import SponsoredBanners from "@/components/SponsoredBanners";
-
-async function FeaturedSchools() {
-  const schools = await getFeaturedSchools();
-  if (schools.length === 0) return null;
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {schools.slice(0, 3).map((school) => (
-        <SchoolCard key={school.id} school={school} />
-      ))}
-    </div>
-  );
-}
+import { supabase } from "@/lib/supabase";
 
 const CATEGORIES = [
   {
@@ -51,7 +38,7 @@ const CATEGORIES = [
     iconColor: "text-amber-600 bg-amber-100",
     count: "8+",
   },
-];
+]
 
 const STATS = [
   { icon: Building2, value: "500+", label: "Байгууллага", color: "text-blue-400" },
@@ -68,6 +55,28 @@ const WHY_US = [
 ]
 
 export default function HomePage() {
+  const [featuredSchools, setFeaturedSchools] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchSchools = async () => {
+      const { data } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('is_featured', true)
+        .order('tier', { ascending: false })
+        .limit(3)
+      if (data) {
+        const sorted = data.sort((a: any, b: any) => {
+          if (a.tier === 'premium' && b.tier !== 'premium') return -1
+          if (a.tier !== 'premium' && b.tier === 'premium') return 1
+          return 0
+        })
+        setFeaturedSchools(sorted)
+      }
+    }
+    fetchSchools()
+  }, [])
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -118,9 +127,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Suspense fallback={null}>
-        <SponsoredBanners />
-      </Suspense>
+      <SponsoredBanners />
 
       <section className="py-14">
         <div className="container mx-auto max-w-7xl px-4">
@@ -160,9 +167,19 @@ export default function HomePage() {
               Бүгдийг харах <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <Suspense fallback={<SkeletonGrid count={3} />}>
-            <FeaturedSchools />
-          </Suspense>
+          {featuredSchools.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {featuredSchools.map((school) => (
+                <SchoolCard key={school.id} school={school} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[1,2,3].map((i) => (
+                <div key={i} className="h-48 rounded-2xl bg-gray-100 animate-pulse" />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -206,5 +223,5 @@ export default function HomePage() {
         </div>
       </section>
     </div>
-  );
+  )
 }
