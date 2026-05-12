@@ -12,8 +12,9 @@ async function FeaturedSchools() {
   const schools = await getFeaturedSchools();
   if (schools.length === 0) return null;
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {schools.map((school) => (
+ return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {schools.slice(0, 3).map((school) => (
         <SchoolCard key={school.id} school={school} />
       ))}
     </div>
