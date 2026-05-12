@@ -163,7 +163,7 @@ export default function SchoolDashboardPage() {
       tuition_max: editForm.tuition_max ? Number(editForm.tuition_max) : null,
     }).eq('id', school?.id)
     setSaveLoading(false)
-    if (!error) {
+ if (!error) {
   setSchool((prev) => prev ? {
     ...prev,
     phone: editForm.phone,
@@ -171,10 +171,10 @@ export default function SchoolDashboardPage() {
     website: editForm.website || null,
     facebook: editForm.facebook || null,
     description: editForm.description || null,
-    address: editForm.address || null,
+    address: editForm.address || prev.address,
     tuition_min: editForm.tuition_min ? Number(editForm.tuition_min) : null,
     tuition_max: editForm.tuition_max ? Number(editForm.tuition_max) : null,
-  } : prev)
+  } as School : prev)
   setEditMode(false)
 }
   }
