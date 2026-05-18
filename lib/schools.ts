@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, getServiceClient } from "./supabase";
 import type { School, SearchFilters } from "./types";
 
 export async function getSchools(filters: SearchFilters = {}): Promise<School[]> {
@@ -97,7 +97,7 @@ export async function getStats() {
 export async function createSchool(
   school: Omit<School, "id" | "created_at">
 ): Promise<School> {
-  const { data, error } = await supabase
+const { data, error } = await getServiceClient()
     .from("schools")
     .insert(school)
     .select()
@@ -110,7 +110,7 @@ export async function updateSchool(
   id: string,
   school: Partial<School>
 ): Promise<School> {
-  const { data, error } = await supabase
+const { data, error } = await getServiceClient()
     .from("schools")
     .update(school)
     .eq("id", id)
@@ -121,12 +121,12 @@ export async function updateSchool(
 }
 
 export async function deleteSchool(id: string): Promise<void> {
-  const { error } = await supabase.from("schools").delete().eq("id", id);
+  const { error } = await getServiceClient().from("schools").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function getAllSchoolsAdmin(): Promise<School[]> {
-  const { data, error } = await supabase
+const { data, error } = await getServiceClient()
     .from("schools")
     .select("*")
     .order("created_at", { ascending: false });
