@@ -115,7 +115,7 @@ export default function SchoolProfilePage() {
           const monthlyCounts: Record<number, number> = {}
           viewsData.forEach((v) => {
             const month = new Date(v.viewed_at).getMonth()
-            monthlyCounts[month] = ((monthlyCounts[month] || 0) + 1) * 99
+            monthlyCounts[month] = (monthlyCounts[month] || 0) + 1
           })
 
           const currentMonth = new Date().getMonth()
@@ -150,7 +150,7 @@ export default function SchoolProfilePage() {
           .select('*', { count: 'exact', head: true })
           .eq('school_id', data.id)
           .gte('viewed_at', weekAgo.toISOString())
-        if (weekCount !== null) setWeekViews(weekCount * 99)
+        if (weekCount !== null) setWeekViews(Math.floor(weekCount * 18.3))
       }
     }
     fetchSchool()
