@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { MapPin, Phone, Mail, Globe, Facebook, CheckCircle, ArrowLeft, Eye, Bell, BarChart2, TrendingUp, Calendar } from 'lucide-react'
 import Link from 'next/link'
-
+import ReviewSection from './ReviewSection'
 type School = {
   id: string
   name: string
@@ -443,8 +443,14 @@ export default function SchoolProfilePage() {
              school.tier === 'standard' ? '⭐ Standard гишүүн' :
              'Basic гишүүн'}
           </div>
-        </div>
+   </div>
       </div>
+
+      {/* Үнэлгээ */}
+      <div className="max-w-4xl mx-auto px-4 pb-8">
+        <ReviewSection schoolId={school.id} />
+      </div>
+
     </div>
   )
 }
