@@ -10,7 +10,7 @@ import {
   Image as ImageIcon, Video, Lock
 } from 'lucide-react'
 import Link from 'next/link'
-import ReviewSection from './ReviewSection'
+import ReviewSection from '../../school/[slug]/ReviewSection'
 
 type School = {
   id: string
